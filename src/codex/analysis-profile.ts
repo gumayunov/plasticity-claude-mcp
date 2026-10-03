@@ -258,7 +258,7 @@ function baseArgv(): string[] {
   return argv;
 }
 
-function normalizeAllowedDomains(domains: string[]): string[] {
+export function normalizeAllowedDomains(domains: string[]): string[] {
   const normalized = new Set<string>();
   for (const entry of domains) {
     const domain = entry.trim().toLowerCase().replace(/\.$/, "");

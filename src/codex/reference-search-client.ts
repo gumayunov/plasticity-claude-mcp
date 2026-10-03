@@ -247,13 +247,13 @@ export function referenceSearchOutputJsonSchema(): Record<string, unknown> {
   };
 }
 
-function searchPrompt(input: ReferenceSearchInput): string {
+export function searchPrompt(input: ReferenceSearchInput): string {
   const payload = JSON.stringify({ query: input.query, intendedUse: input.intendedUse ?? null, maxCandidates: input.limit });
   if (Buffer.byteLength(payload, "utf8") > 4_096) throw new ReferenceSearchClientError("SEARCH_INPUT_TOO_LARGE", "Search request is too large");
   return `Find up to ${input.limit} relevant CAD or reliable dimensional candidates for this product. Request JSON: ${payload}. Prefer native STEP or other editable CAD, then official dimensioned drawings. Order manufacturer sources before qualified distributors and established CAD libraries; use community models only as approximate candidates. Use web search to verify each title, source page URL, source type, what the page actually provides, stated license status, access status (free, paid, account-required, quote-required, or unknown), and dimensions explicitly visible in source results. State known prices/access requirements in the summary, and never equate a purchasable CAD page with an exposed direct file. When an official or qualified result page points to an individual downloadable model or drawing, open that page using the built-in web search open-page action and inspect its exposed links. If the page names a downloadable asset but its exact URL is not exposed, make one additional web search using the exact visible filename and official source domain to try to find that URL. List a downloadable asset only when its exact HTTPS URL appears in a web-search result or opened-page result; include the exposed format and whether it is editable CAD, a mesh reference, or a dimensioned document. Keep the candidate page URL separate from asset URLs. Do not guess or construct file URLs, infer a format from vague text, follow unrelated links, or download any asset. Never infer dimensions from photos or meshes. If no direct asset URL is exposed, return an empty assets array and say so in limitations.`;
 }
 
-function collectHttpsUrls(value: unknown, target: Set<string>, depth = 0): void {
+export function collectHttpsUrls(value: unknown, target: Set<string>, depth = 0): void {
   if (depth > 8 || target.size > 500) return;
   if (Array.isArray(value)) {
     for (const child of value) collectHttpsUrls(child, target, depth + 1);
@@ -315,7 +315,7 @@ function allowedEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 
 function bounded(text: string): string { return text.replaceAll(/\s+/g, " ").slice(0, 240); }
 
-function canonicalHttpsUrl(value: string): string {
+export function canonicalHttpsUrl(value: string): string {
   try { return new URL(value).toString(); } catch { return value; }
 }
 
