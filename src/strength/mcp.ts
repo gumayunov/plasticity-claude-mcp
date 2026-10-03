@@ -222,8 +222,10 @@ export interface StrengthDependencies {
   analyzeCohesive(input: CohesiveAnalysisInput, workspace: string, signal: AbortSignal): Promise<CohesiveAnalysisResult>;
   analysis: AnalysisClient | null;
   analysisUnavailableReason?: string;
+  analysisProvider?: string;
   referenceSearch?: ReferenceSearchClient | null;
   referenceSearchUnavailableReason?: string;
+  referenceSearchTransport?: string;
   inspectMember(request: MemberRequest): Promise<MemberEvidence>;
   inspectIntegralPlate(request: IntegralPlateRequest): Promise<IntegralPlateEvidence>;
   readCadBinding(bodyId: number): Promise<CadBinding>;
@@ -306,34 +308,34 @@ export function registerStrengthTools(server: McpServer, deps: StrengthDependenc
 
   tool(
     "plasticity_strength_methods",
-    `List deterministic member, plate and section methods plus Codex analysis availability. ${STRENGTH_CORE_DESCRIPTION}`,
+    `List deterministic member, plate and section methods plus isolated analysis availability and provider. ${STRENGTH_CORE_DESCRIPTION}`,
     z.object({}).strict(),
     readonly,
     async () => ({
       methods: listStrengthMethods(),
       analysis: deps.analysis
-        ? { available: true }
-        : { available: false, reason: deps.analysisUnavailableReason ?? "Isolated Codex analysis is unavailable" },
+        ? { available: true, ...(deps.analysisProvider === undefined ? {} : { provider: deps.analysisProvider }) }
+        : { available: false, reason: deps.analysisUnavailableReason ?? "Isolated analysis is unavailable" },
     }),
   );
 
   tool(
     "plasticity_reference_search_status",
-    "Report whether isolated Codex live web search for product CAD and dimensional references is available. This capability has no CAD, shell, local-file, or MCP access.",
+    "Report whether isolated live web search for product CAD and dimensional references is available. This capability has no CAD, shell, local-file, or MCP access.",
     z.object({}).strict(),
     readonly,
     async () => deps.referenceSearch
-      ? { available: true, transport: "Codex app-server web_search live", autoImport: false }
-      : { available: false, reason: deps.referenceSearchUnavailableReason ?? "Isolated Codex reference search is unavailable", autoImport: false },
+      ? { available: true, transport: deps.referenceSearchTransport ?? "isolated live web search", autoImport: false }
+      : { available: false, reason: deps.referenceSearchUnavailableReason ?? "Isolated reference search is unavailable", autoImport: false },
   );
 
   tool(
     "plasticity_search_product_references",
-    "Search live web sources for candidate CAD models and reliable dimensioned references using an isolated Codex profile. Results are unverified discovery leads only: source-page and direct asset URLs are cross-checked against Codex web-search/open-page results, but licensing, paid/account access, fit, source quality and dimensions still require review. Each candidate reports accessStatus separately from licenseStatus; a paid product page is not a direct asset URL and must not be passed to an importer. It never downloads/imports files or mutates CAD. Prefer manufacturer sources; specify allowedDomains when discovery should be scoped. searchTimeoutMs defaults to 180000 and accepts 30000–180000 ms for slow searches.",
+    "Search live web sources for candidate CAD models and reliable dimensioned references using an isolated search-only model turn. Results are unverified discovery leads only: source-page and direct asset URLs are cross-checked against the URLs in its web-search and page-fetch results, but licensing, paid/account access, fit, source quality and dimensions still require review. Each candidate reports accessStatus separately from licenseStatus; a paid product page is not a direct asset URL and must not be passed to an importer. It never downloads/imports files or mutates CAD. Prefer manufacturer sources; specify allowedDomains when discovery should be scoped. searchTimeoutMs defaults to 180000 and accepts 30000–180000 ms for slow searches.",
     referenceSearchMcpRequestSchema,
     { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     async (input, extra) => {
-      if (!deps.referenceSearch) throw new Error(deps.referenceSearchUnavailableReason ?? "Isolated Codex reference search is unavailable");
+      if (!deps.referenceSearch) throw new Error(deps.referenceSearchUnavailableReason ?? "Isolated reference search is unavailable");
       const progressToken = extra._meta?.progressToken;
       const startedAt = Date.now();
       const { searchTimeoutMs: timeoutMs, ...searchInput } = input;
@@ -345,7 +347,7 @@ export function registerStrengthTools(server: McpServer, deps: StrengthDependenc
             progressToken,
             progress: Math.min(Date.now() - startedAt, timeoutMs),
             total: timeoutMs,
-            message: "Codex is searching product CAD and dimensional references.",
+            message: "Searching product CAD and dimensional references.",
           },
         }).catch(() => undefined);
       };
@@ -361,29 +363,29 @@ export function registerStrengthTools(server: McpServer, deps: StrengthDependenc
 
   tool(
     "plasticity_analyze_strength_task",
-    `Run one isolated Codex turn for factual extraction and the single next decision-relevant question package. Include each prior full question with its user answer on follow-up turns. This writes a durable request record, contacts Codex, never mutates CAD and never authorizes a print. ${STRENGTH_CORE_DESCRIPTION}`,
+    `Run one isolated analysis turn for factual extraction and the single next decision-relevant question package. Include each prior full question with its user answer on follow-up turns. This writes a durable request record, contacts the analysis provider, never mutates CAD and never authorizes a print. ${STRENGTH_CORE_DESCRIPTION}`,
     analysisRequestSchema,
     { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     async (input, extra) => {
-      if (!deps.analysis) throw new Error(deps.analysisUnavailableReason ?? "Isolated Codex analysis is unavailable");
+      if (!deps.analysis) throw new Error(deps.analysisUnavailableReason ?? "Isolated analysis is unavailable");
       return await analyzeRequest(input as unknown as AnalysisRequest, deps.store, deps.analysis, extra.signal);
     },
   );
 
   tool(
     "plasticity_analyze_design_reference",
-    "Use the bounded, action-free Codex API profile to inspect the supplied photo/sketch views and text (up to four PNG/JPEG/HEIC/HEIF images, 20 MiB each; macOS converts HEIC/HEIF locally to JPEG for analysis). Returns structured functional interfaces and candidate features, an explicit scale-confidence status, and at most one next decision-relevant question package. A dimensioned/calibrated result requires traceable positive millimeter scale evidence; unscaled views cannot yield millimeter measurements. It never creates CAD or sends a print. The request is durable and is not retried under the same ID after interruption.",
+    "Use a bounded, tool-free analysis model turn to inspect the supplied photo/sketch views and text (up to four PNG/JPEG/HEIC/HEIF images, 20 MiB each; macOS converts HEIC/HEIF locally to JPEG for analysis). Returns structured functional interfaces and candidate features, an explicit scale-confidence status, and at most one next decision-relevant question package. A dimensioned/calibrated result requires traceable positive millimeter scale evidence; unscaled views cannot yield millimeter measurements. It never creates CAD or sends a print. The request is durable and is not retried under the same ID after interruption.",
     designReferenceRequestSchema,
     { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     async (input, extra) => {
-      if (!deps.analysis) throw new Error(deps.analysisUnavailableReason ?? "Isolated Codex analysis is unavailable");
+      if (!deps.analysis) throw new Error(deps.analysisUnavailableReason ?? "Isolated analysis is unavailable");
       return await analyzeRequest(input as unknown as AnalysisRequest, deps.store, deps.analysis, extra.signal);
     },
   );
 
   tool(
     "plasticity_design_reference_request",
-    "Read a persisted design-reference analysis without starting or retrying a Codex turn.",
+    "Read a persisted design-reference analysis without starting or retrying an analysis turn.",
     z.object({ requestId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/) }).strict(),
     readonly,
     async ({ requestId }) => await deps.store.readRequest(requestId),
@@ -391,7 +393,7 @@ export function registerStrengthTools(server: McpServer, deps: StrengthDependenc
 
   tool(
     "plasticity_strength_request",
-    "Read one persisted strength-analysis request without starting or retrying Codex.",
+    "Read one persisted strength-analysis request without starting or retrying the analysis.",
     z.object({ requestId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/) }).strict(),
     readonly,
     async ({ requestId }) => await deps.store.readRequest(requestId),
@@ -987,12 +989,12 @@ export function registerStrengthTools(server: McpServer, deps: StrengthDependenc
   );
 
   server.registerPrompt("plasticity_strength_first", {
-    description: "Guide Codex through evidence-first strength analysis before a logical CAD action.",
+    description: "Guide the agent through evidence-first strength analysis before a logical CAD action.",
     argsSchema: { task: z.string().trim().min(1).max(4_000).optional() },
   }, ({ task }) => ({ messages: [{ role: "user", content: { type: "text", text: strengthPrompt(task) } }] }));
 
   server.registerPrompt("plasticity_design_from_reference", {
-    description: "Guide Codex through evidence-first functional CAD intake from a photo or sketch before a logical modeling action.",
+    description: "Guide the agent through evidence-first functional CAD intake from a photo or sketch before a logical modeling action.",
     argsSchema: { task: z.string().trim().min(1).max(4_000).optional() },
   }, ({ task }) => ({ messages: [{ role: "user", content: { type: "text", text: designReferencePrompt(task) } }] }));
 

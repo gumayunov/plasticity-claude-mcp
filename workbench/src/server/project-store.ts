@@ -47,7 +47,6 @@ export interface ProjectStore {
   create(name: string, workspacePath: string): Project;
   get(projectId: string): Project | undefined;
   list(): Project[];
-  bindCodexThread(projectId: string, expectedRevision: number, threadId: string): Project;
   addModelVersion(projectId: string, expectedRevision: number, input: ModelVersionInput): ProjectMutation<ModelVersion>;
   addStructuredBlock(projectId: string, expectedRevision: number, block: StructuredBlockInput): ProjectMutation<StructuredBlock>;
   addAnnotationBatch(projectId: string, input: AnnotationBatchInput): ProjectMutation<Annotation[]>;
@@ -58,7 +57,6 @@ export interface ProjectStore {
   listConstructionJournals(projectId: string): ConstructionJournalRecord[];
   publishStatus(projectId: string, expectedRevision: number, status: string): ProjectMutation<string>;
   appendEvent(projectId: string, payload: WorkbenchEventPayload): WorkbenchEvent;
-  appendCodexEvent(projectId: string, event: Record<string, unknown>): WorkbenchEvent;
   eventsAfter(projectId: string, sequence: number): WorkbenchEvent[];
   subscribe(listener: (event: WorkbenchEvent) => void): () => void;
 }
@@ -114,16 +112,6 @@ export class SqliteProjectStore implements ProjectStore {
   list(): Project[] {
     const rows = this.database.prepare("SELECT * FROM projects ORDER BY created_at DESC, rowid DESC").all() as unknown as ProjectRow[];
     return rows.map(mapProject);
-  }
-
-  bindCodexThread(projectId: string, expectedRevision: number, threadId: string): Project {
-    const trimmedThreadId = threadId.trim();
-    if (!trimmedThreadId) throw new Error("Codex thread ID is required");
-    return this.mutate(projectId, expectedRevision, (nextProject) => {
-      this.database.prepare("UPDATE projects SET codex_thread_id = ? WHERE id = ?").run(trimmedThreadId, projectId);
-      const value = { ...nextProject, codexThreadId: trimmedThreadId };
-      return { value, event: { type: "project.updated", project: value } };
-    }).value;
   }
 
   addModelVersion(
@@ -336,10 +324,6 @@ export class SqliteProjectStore implements ProjectStore {
       value: trimmed,
       event: { type: "status.published", status: trimmed },
     }));
-  }
-
-  appendCodexEvent(projectId: string, event: Record<string, unknown>): WorkbenchEvent {
-    return this.appendEvent(projectId, { type: "codex.event", event });
   }
 
   appendEvent(projectId: string, payload: WorkbenchEventPayload): WorkbenchEvent {

@@ -139,7 +139,7 @@ test("MCP initializes, lists tools, and validates tool input", async () => {
   assert.match(instructions, /Ask one compact, decision-relevant question package at a time/i);
   assert.match(instructions, /Keep strength checks proportional to risk/i);
   assert.match(instructions, /plasticity_measure_nonparallel_planar_polygon_clearance when both trimmed faces have simple straight-edged loops; concave outlines, holes, and multiple loops are supported/i);
-  assert.match(instructions, /Workbench is optional; the user may inspect the model in Plasticity and continue in Codex/i);
+  assert.match(instructions, /Workbench is optional; the user may inspect the model in Plasticity and continue in this chat/i);
   assert.match(instructions, /wait for the user's explicit confirmation before calling any print-submission tool/i);
 
   const tools = await client.listTools();
@@ -464,7 +464,7 @@ test("MCP initializes, lists tools, and validates tool input", async () => {
   assert.match(JSON.stringify(prompt.messages), /Do not require physical coupon campaigns or detailed FEA before making a useful first model/);
   assert.match(JSON.stringify(prompt.messages), /before presenting a load-bearing design as ready to manufacture/);
   assert.match(JSON.stringify(prompt.messages), /one compact logical package at a time/);
-  assert.match(JSON.stringify(prompt.messages), /Workbench is optional; keep the conversation in Codex/);
+  assert.match(JSON.stringify(prompt.messages), /Workbench is optional; keep the conversation in this chat/);
   assert.match(JSON.stringify(prompt.messages), /plasticity_resolve_fastener_designation/);
   assert.match(JSON.stringify(prompt.messages), /plasticity_check_fastener_stack/);
   assert.match(JSON.stringify(prompt.messages), /plasticity_check_fastener_group_layout/);

@@ -84,7 +84,7 @@ export function createWorkbenchMcpServer(api: WorkbenchApiClient): McpServer {
     result(await api.publishStatus(projectId, expectedRevision, status)));
 
   server.registerTool("workbench_register_reference", {
-    description: "Register provenance for a source already inspected by Codex. Attach downloaded files to the project first; the Workbench never fetches arbitrary URLs.",
+    description: "Register provenance for a source the agent already inspected. Attach downloaded files to the project first; the Workbench never fetches arbitrary URLs.",
     inputSchema: z.object({
       projectId: projectIdSchema,
       expectedRevision: revisionSchema,
@@ -222,14 +222,14 @@ export function createWorkbenchMcpServer(api: WorkbenchApiClient): McpServer {
     result(await api.waitForFeedback(projectId, afterSequence, timeoutSeconds)));
 
   server.registerPrompt("plasticity_workbench_review", {
-    description: "Guide Codex through publishing and reviewing a Plasticity model in Workbench.",
+    description: "Guide the agent through publishing and reviewing a Plasticity model in Workbench.",
     argsSchema: { projectId: projectIdSchema },
   }, ({ projectId }) => ({
     messages: [{
       role: "user",
       content: {
         type: "text",
-        text: `Review Plasticity work for project ${projectId}. Read project status and use its current revision for every publication. Export a new STEP file through Plasticity MCP, upload it to this Workbench project, then publish a model version with Plasticity document identity, revision, and native B-Rep measurements. Publish concise dimensions and validation blocks plus the current Plasticity construction journal checkpoint. Wait for a submitted feedback batch before changing geometry. Treat annotations on an older model version as requiring explicit remapping. Never repeat an uncertain CAD or Codex operation automatically.`,
+        text: `Review Plasticity work for project ${projectId}. Read project status and use its current revision for every publication. Export a new STEP file through Plasticity MCP, upload it to this Workbench project, then publish a model version with Plasticity document identity, revision, and native B-Rep measurements. Publish concise dimensions and validation blocks plus the current Plasticity construction journal checkpoint. Wait for a submitted feedback batch before changing geometry. Treat annotations on an older model version as requiring explicit remapping. Never repeat an uncertain CAD or analysis operation automatically.`,
       },
     }],
   }));

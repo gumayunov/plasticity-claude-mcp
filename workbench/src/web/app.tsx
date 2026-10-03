@@ -110,7 +110,7 @@ export function App() {
 
   return <main className="workbench-shell">
     <nav className="project-nav" aria-label="Проекты">
-      <div className="brand"><span className="brand-mark">P</span><div><strong>Workbench</strong><small>Plasticity + Codex</small></div></div>
+      <div className="brand"><span className="brand-mark">P</span><div><strong>Workbench</strong><small>Plasticity</small></div></div>
       <div className="nav-label">Проекты</div>
       <div className="project-list">{projects.map((project) => <button key={project.id} className={selectedId === project.id ? "active" : ""} onClick={() => setSelectedId(project.id)}>
         <span className="project-icon">◇</span><span><strong>{project.name}</strong><small>rev {project.revision}</small></span>

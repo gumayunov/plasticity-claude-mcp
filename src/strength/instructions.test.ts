@@ -10,7 +10,7 @@ import {
   STRENGTH_WORKFLOW_RESOURCE,
 } from "./instructions.ts";
 
-test("CAD reference intake preserves image uncertainty and keeps Codex as the conversation partner", () => {
+test("CAD reference intake preserves image uncertainty and keeps the chat agent as the conversation partner", () => {
   const prompt = designReferencePrompt("Build a bracket from a photo");
   assert.match(prompt, /plasticity_analyze_design_reference/);
   assert.match(prompt, /cannot establish exact millimetre dimensions/i);
@@ -53,7 +53,7 @@ test("CAD reference intake preserves image uncertainty and keeps Codex as the co
   assert.match(prompt, /Compare distinct views for agreement/i);
   assert.match(prompt, /Current request: Build a bracket from a photo/);
   assert.match(prompt, /Do not start or submit a physical print/i);
-  assert.equal(DESIGN_REFERENCE_WORKFLOW_RESOURCE.includes("Codex remains the user's conversation partner"), true);
+  assert.equal(DESIGN_REFERENCE_WORKFLOW_RESOURCE.includes("The agent in this chat remains the user's conversation partner"), true);
 });
 
 test("workflow tells Codex to resolve strength facts before CAD changes", () => {
@@ -104,7 +104,7 @@ test("resources include supported, unsupported and stale worked outcomes without
   assert.match(STRENGTH_WORKFLOW_RESOURCE, /unsupported torsion/i);
   assert.match(STRENGTH_WORKFLOW_RESOURCE, /stale face/i);
   assert.match(STRENGTH_WORKFLOW_RESOURCE, /arbitrary critical plane/i);
-  assert.match(STRENGTH_WORKFLOW_RESOURCE, /Codex chat/i);
+  assert.match(STRENGTH_WORKFLOW_RESOURCE, /in the chat before calculating/i);
   assert.match(STRENGTH_WORKFLOW_RESOURCE, /whole.part validation/i);
   assert.match(STRENGTH_WORKFLOW_RESOURCE, /stale report/i);
   assert.doesNotMatch(STRENGTH_WORKFLOW_RESOURCE, /send (?:it )?to (?:the )?printer|start printing/i);

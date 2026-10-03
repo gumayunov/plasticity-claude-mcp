@@ -1388,7 +1388,7 @@ test("product reference search is isolated and reports unavailable capability wi
   assert.match(searchDescription, /paid product page is not a direct asset URL/i);
   assert.match(searchDescription, /never downloads\/imports files or mutates CAD/i);
   const status = output(await harness.client.callTool({ name: "plasticity_reference_search_status", arguments: {} }));
-  assert.deepEqual(status, { available: true, transport: "Codex app-server web_search live", autoImport: false });
+  assert.deepEqual(status, { available: true, transport: "isolated live web search", autoImport: false });
 
   const unavailable = await createHarness(context, {
     referenceSearch: null,

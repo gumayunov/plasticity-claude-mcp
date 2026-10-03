@@ -38,7 +38,6 @@ async function createHarness(context: test.TestContext) {
   assert.match(instructions, /Creality K1C with Creality Print or OrcaSlicer/i);
   assert.match(instructions, /Bambu Lab remains soon-only/i);
   assert.match(instructions, /Only submit a print job after the user explicitly confirms/i);
-  assert.match(instructions, /Codex chat remains in Codex/i);
   context.after(async () => {
     await client.close();
     await server.close();
@@ -46,6 +45,9 @@ async function createHarness(context: test.TestContext) {
     database.close();
     await rm(root, { recursive: true, force: true });
   });
+  assert.doesNotMatch(instructions, /\bCodex\b/);
+  for (const tool of (await client.listTools()).tools) assert.doesNotMatch(tool.description ?? "", /\bCodex\b/, tool.name);
+  for (const prompt of (await client.listPrompts()).prompts) assert.doesNotMatch(prompt.description ?? "", /\bCodex\b/, prompt.name);
   return { client, project };
 }
 

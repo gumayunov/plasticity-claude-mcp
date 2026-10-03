@@ -74,6 +74,10 @@ const strength = strengthDependenciesForSession(session, {
   ...(profile.available ? {} : { analysisUnavailableReason: profile.reason }),
   referenceSearch,
   ...(referenceSearchProfile.available ? {} : { referenceSearchUnavailableReason: referenceSearchProfile.reason }),
+  ...(provider === "none" ? {} : {
+    analysisProvider: provider,
+    referenceSearchTransport: provider === "claude" ? "claude -p with WebSearch and WebFetch" : "Codex app-server web_search live",
+  }),
 });
 const threadQualifications = process.env.PLASTICITY_THREAD_QUALIFICATION_ROOT
   ? new PrintedThreadQualificationStore(process.env.PLASTICITY_THREAD_QUALIFICATION_ROOT)
