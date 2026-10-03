@@ -1,0 +1,11 @@
+{
+  "name": "plasticity",
+  "description": "Model, measure and check parts in locally installed Plasticity CAD: native B-rep operations, photo and sketch intake, product CAD search, deterministic strength methods and linear FEM.",
+  "version": "0.2.1",
+  "author": {
+    "name": "Aleksand Meshchriakov"
+  },
+  "repository": "https://github.com/Mesteriis/plasticity-mcp",
+  "license": "MIT",
+  "keywords": ["cad", "plasticity", "mcp", "strength", "fem"]
+}

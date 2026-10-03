@@ -1,0 +1,15 @@
+{
+  "name": "plasticity",
+  "description": "Plasticity CAD tools for Claude Code from this repository checkout.",
+  "owner": {
+    "name": "Aleksand Meshchriakov"
+  },
+  "plugins": [
+    {
+      "name": "plasticity",
+      "description": "Model, measure and check parts in locally installed Plasticity CAD.",
+      "version": "0.2.1",
+      "source": "./plugins/plasticity-claude"
+    }
+  ]
+}

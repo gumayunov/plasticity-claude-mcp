@@ -16,6 +16,7 @@
     "start:plasticity-isolated": "node scripts/start-plasticity-isolated.ts",
     "start:workbench": "node scripts/start-workbench.ts",
     "setup:codex": "node scripts/setup-codex-plugin.ts",
+    "setup:claude": "node scripts/setup-claude-plugin.ts",
     "probe:targets": "node scripts/probe-targets.ts",
     "probe:construction": "node scripts/probe-construction.ts",
     "probe:regions": "node scripts/probe-regions.ts",
