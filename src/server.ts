@@ -40,7 +40,7 @@ import {
   printedThreadQualificationMatchSchema,
 } from "./printing/thread-qualification.ts";
 import { PLASTICITY_MCP_INSTRUCTIONS } from "./server-instructions.ts";
-import { exposeDirectTool, type ToolCatalogMode } from "./tool-catalog.ts";
+import { CATALOG_SCHEMA_PAGE_LIMIT, catalogSummary, compactJsonSchema, exposeDirectTool, type ToolCatalogMode } from "./tool-catalog.ts";
 
 const vector = z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]);
 const vector2 = z.tuple([z.number().finite(), z.number().finite()]);
@@ -100,16 +100,22 @@ function compactChangedBody(body: RuntimeState["bodies"][number]) {
   };
 }
 
+/**
+ * A mutation answers with what it changed, not with the whole scene: parts
+ * that stayed the same are reduced to counts and tokens, changed parts are
+ * returned in full. plasticity_status still reads the complete summary.
+ */
 function compactMutationResult<T>(value: RuntimeState, change: SceneDiff): T {
-  return {
-    ...compactStatusSummary(value, 0, 20),
-    change: {
-      sceneChanged: change.sceneChanged,
-      revisionChanged: change.revisionChanged,
-      changed: change.changed,
-      documentChanged: change.documentChanged,
-      added: change.added.map(compactChangedBody),
-      removed: change.removed.map(compactChangedBody),
+  const planesChanged = change.constructionPlanesAdded.length > 0
+    || change.constructionPlanesRemoved.length > 0
+    || change.constructionPlanesModified.length > 0
+    || change.activeWorkplaneChanged !== null;
+  const regionsChanged = change.regionsAdded.length > 0 || change.regionsRemoved.length > 0 || change.regionsModified.length > 0;
+  const { planes, ...planeState } = value.construction;
+  const changedBodies = {
+    ...(change.added.length > 0 ? { added: change.added.map(compactChangedBody) } : {}),
+    ...(change.removed.length > 0 ? { removed: change.removed.map(compactChangedBody) } : {}),
+    ...(change.modified.length > 0 ? {
       modified: change.modified.map((item) => ({
         id: item.id,
         renamed: item.renamed,
@@ -119,27 +125,61 @@ function compactMutationResult<T>(value: RuntimeState, change: SceneDiff): T {
         before: compactChangedBody(item.before),
         after: compactChangedBody(item.after),
       })),
-      regionsAdded: change.regionsAdded.map(({ id, displayBoundsMm }) => ({ id, displayBoundsMm })),
-      regionsRemoved: change.regionsRemoved.map(({ id, displayBoundsMm }) => ({ id, displayBoundsMm })),
+    } : {}),
+  };
+  const changedRegions = {
+    ...(change.regionsAdded.length > 0 ? { regionsAdded: change.regionsAdded.map(({ id, displayBoundsMm }) => ({ id, displayBoundsMm })) } : {}),
+    ...(change.regionsRemoved.length > 0 ? { regionsRemoved: change.regionsRemoved.map(({ id, displayBoundsMm }) => ({ id, displayBoundsMm })) } : {}),
+    ...(change.regionsModified.length > 0 ? {
       regionsModified: change.regionsModified.map(({ id, before, after }) => ({
         id,
         before: { displayBoundsMm: before.displayBoundsMm },
         after: { displayBoundsMm: after.displayBoundsMm },
       })),
-      constructionPlanesAdded: change.constructionPlanesAdded.map((plane) => ({ nativeId: plane.nativeId, name: plane.name })),
-      constructionPlanesRemoved: change.constructionPlanesRemoved.map((plane) => ({ nativeId: plane.nativeId, name: plane.name })),
+    } : {}),
+  };
+  const changedPlanes = {
+    ...(change.constructionPlanesAdded.length > 0 ? { constructionPlanesAdded: change.constructionPlanesAdded.map((plane) => ({ nativeId: plane.nativeId, name: plane.name })) } : {}),
+    ...(change.constructionPlanesRemoved.length > 0 ? { constructionPlanesRemoved: change.constructionPlanesRemoved.map((plane) => ({ nativeId: plane.nativeId, name: plane.name })) } : {}),
+    ...(change.constructionPlanesModified.length > 0 ? {
       constructionPlanesModified: change.constructionPlanesModified.map(({ nativeId, before, after }) => ({
         nativeId,
         before: { name: before.name },
         after: { name: after.name },
       })),
-      activeWorkplaneChanged: change.activeWorkplaneChanged,
-      materialsChanged: change.materialsChanged,
-      measurementsChanged: change.measurementsChanged,
-      sectionAnalysesChanged: change.sectionAnalysesChanged,
-      instancesChanged: change.instancesChanged,
-      referenceMeshesChanged: change.referenceMeshesChanged,
-      groupsChanged: change.groupsChanged,
+    } : {}),
+    ...(change.activeWorkplaneChanged !== null ? { activeWorkplaneChanged: change.activeWorkplaneChanged } : {}),
+  };
+  const changedFlags = Object.fromEntries(([
+    "materialsChanged", "measurementsChanged", "sectionAnalysesChanged", "instancesChanged", "referenceMeshesChanged", "groupsChanged",
+  ] as const).filter((flag) => change[flag]).map((flag) => [flag, true]));
+  return {
+    targetId: value.targetId,
+    title: value.title,
+    documentToken: value.documentToken,
+    revision: value.revision,
+    dbVersion: value.dbVersion,
+    undoDepth: value.undoDepth,
+    redoDepth: value.redoDepth,
+    bodyCount: value.bodies.length,
+    ...(value.activeGroupId === undefined ? {} : { activeGroupId: value.activeGroupId }),
+    construction: planesChanged ? value.construction : { ...planeState, planeIds: planes.map((plane) => plane.id) },
+    ...(regionsChanged ? { regions: value.regions } : { regionCount: value.regions.length }),
+    ...(change.materialsChanged && value.materials ? { materials: value.materials } : {}),
+    ...(change.measurementsChanged && value.measurements ? { measurements: value.measurements } : {}),
+    ...(change.sectionAnalysesChanged && value.sectionAnalyses ? { sectionAnalyses: value.sectionAnalyses } : {}),
+    ...(change.instancesChanged && value.instances ? { instances: value.instances } : {}),
+    ...(change.referenceMeshesChanged && value.referenceMeshes ? { referenceMeshes: value.referenceMeshes } : {}),
+    ...(change.groupsChanged && value.groups ? { groups: value.groups } : {}),
+    change: {
+      sceneChanged: change.sceneChanged,
+      revisionChanged: change.revisionChanged,
+      changed: change.changed,
+      documentChanged: change.documentChanged,
+      ...changedBodies,
+      ...changedRegions,
+      ...changedPlanes,
+      ...changedFlags,
     },
   } as T;
 }
@@ -1973,10 +2013,11 @@ function createServerWithCatalog(
     query: z.string().trim().min(1).max(200).optional(),
     offset: z.number().int().nonnegative().default(0),
     limit: z.number().int().min(1).max(25).default(10),
+    schemas: z.boolean().optional(),
   }).strict();
   rawRegisterTool("plasticity_call", {
     title: "Plasticity tool catalog and dispatcher",
-    description: "Browse the bounded catalog of registered Plasticity MCP operations or invoke one by its exact tool name. Use toolName='catalog' with query/offset/limit to read descriptions and JSON input schemas; set toolName to a returned operation name and pass its arguments object to invoke it. Only registered MCP operations are callable; the selected operation's original Zod schema and safety checks are applied. This is not JavaScript execution.",
+    description: `Browse the bounded catalog of registered Plasticity MCP operations or invoke one by its exact tool name. Use toolName='catalog' with query/offset/limit to find operations: a page of up to ${CATALOG_SCHEMA_PAGE_LIMIT} operations, or an exact operation name as the query, returns full descriptions and JSON input schemas; longer pages list one-line summaries unless schemas=true. Set toolName to a returned operation name and pass its arguments object to invoke it. Only registered MCP operations are callable; the selected operation's original Zod schema and safety checks are applied. This is not JavaScript execution.`,
     inputSchema: plasticityCallSchema,
     annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
   }, async (rawInput, extra) => {
@@ -1989,23 +2030,34 @@ function createServerWithCatalog(
     }
 
     const query = input.query?.toLocaleLowerCase();
-    const matching = [...routedTools.values()]
-      .filter((candidate) => candidate.name !== "plasticity_call")
+    const catalog = [...routedTools.values()].filter((candidate) => candidate.name !== "plasticity_call");
+    const exact = catalog.filter((candidate) => candidate.name.toLocaleLowerCase() === query);
+    const matching = (exact.length > 0 ? exact : catalog)
       .filter((candidate) => !query || candidate.name.toLocaleLowerCase().includes(query) || candidate.description.toLocaleLowerCase().includes(query))
       .sort((left, right) => left.name.localeCompare(right.name));
     const page = matching.slice(input.offset, input.offset + input.limit);
+    const withSchemas = input.schemas ?? page.length <= CATALOG_SCHEMA_PAGE_LIMIT;
     return result({
       total: matching.length,
       offset: input.offset,
       limit: input.limit,
       nextOffset: input.offset + page.length < matching.length ? input.offset + page.length : null,
-      validationNote: "The original server-side Zod schema is authoritative; cross-field refinements may be stricter than the exported JSON Schema.",
-      tools: page.map((candidate) => ({
-        name: candidate.name,
-        description: candidate.description,
-        annotations: candidate.annotations,
-        inputSchema: z.toJSONSchema(candidate.inputSchema, { unrepresentable: "any" }),
-      })),
+      ...(withSchemas ? {
+        validationNote: "The original server-side Zod schema is authoritative; cross-field refinements may be stricter than the exported JSON Schema.",
+        tools: page.map((candidate) => ({
+          name: candidate.name,
+          description: candidate.description,
+          annotations: candidate.annotations,
+          inputSchema: compactJsonSchema(z.toJSONSchema(candidate.inputSchema, { unrepresentable: "any" })),
+        })),
+      } : {
+        schemaNote: "Summaries only. Query an exact operation name, or narrow the page to a few operations, for its full description and input schema.",
+        tools: page.map((candidate) => ({
+          name: candidate.name,
+          summary: catalogSummary(candidate.description),
+          readOnly: candidate.annotations.readOnlyHint,
+        })),
+      }),
     });
   });
   let toolTail: Promise<void> = Promise.resolve();
@@ -2447,11 +2499,34 @@ function createServerWithCatalog(
     await session.get().listCurveControlPoints(wireIds, current), true);
   tool("plasticity_list_curve_intersections", "List exact revision-bound native intersections between Wire bodies.", z.object({}), async () =>
     await session.get().listCurveIntersections(), true);
-  tool("plasticity_body_info", "Read one body from the current document revision.", z.object({ id: z.number().int().positive() }), async ({ id }) => {
+  tool("plasticity_body_info", "Read one body's exact native B-Rep faces, edges, and vertices from the current document revision. Each collection is paginated with offset/limit (default 0/50, maximum 500); follow pagination.<collection>.nextOffset and pass the prior page's revision as expectedRevision so edits cannot mix pages. Use include to read only the collections you need, or plasticity_find_faces/plasticity_find_edges for a semantic subset.", z.object({
+    id: z.number().int().positive(),
+    include: z.array(z.enum(["faces", "edges", "vertices"])).min(1).max(3).default(["faces", "edges", "vertices"]),
+    offset: z.number().int().nonnegative().max(1_000_000).default(0),
+    limit: z.number().int().min(1).max(500).default(50),
+    expectedRevision: z.string().min(1).optional(),
+  }).strict(), async ({ id, include, offset, limit, expectedRevision }) => {
     const state = await session.get().state();
+    if (expectedRevision !== undefined && expectedRevision !== state.revision) {
+      throw new Error("CAD revision changed between body pages; restart pagination from offset 0");
+    }
     const body = state.bodies.find((candidate) => candidate.id === id);
     if (!body) throw new Error(`Unknown body ID: ${id}`);
-    return { documentToken: state.documentToken, revision: state.revision, measurementSource: "native-brep", body };
+    const { faceIds: _faceIds, edgeIds: _edgeIds, faces, edges, vertices, ...summary } = body;
+    const collections = { faces, edges, vertices: vertices ?? [] };
+    const pages = Object.fromEntries(include.map((name) => [name, collections[name].slice(offset, offset + limit)]));
+    const pagination = Object.fromEntries(include.map((name) => {
+      const total = collections[name].length;
+      const shown = (pages[name] as unknown[]).length;
+      return [name, { offset, limit, total, nextOffset: offset + shown < total ? offset + shown : null }];
+    }));
+    return {
+      documentToken: state.documentToken,
+      revision: state.revision,
+      measurementSource: "native-brep",
+      body: { ...summary, faceCount: faces.length, edgeCount: edges.length, vertexCount: vertices?.length ?? null, ...pages },
+      pagination,
+    };
   }, true);
   tool("plasticity_inspect_fastener_group", "Read exact in-plane centers and diameters from two or more explicitly selected cylindrical faces on one current Solid. The returned revision-bound native B-Rep evidence and assignments can be passed into fastener-group load distribution; coaxial duplicate faces, stale references, and axes not normal to the supplied frame are rejected.", fastenerGroupInspectionInputSchema, async (request) =>
     await session.get().inspectFastenerGroup(request), true);
@@ -3100,8 +3175,11 @@ function createServerWithCatalog(
     const predictedSizeMm = expectedBoundsMm.max.map((value, axis) => value - expectedBoundsMm.min[axis]!) as [number, number, number];
     const dfmSizeMatches = predictedSizeMm.every((value, axis) => Math.abs(value - expectedSizeMm[axis]!) <= 0.01);
     if (!dfmSizeMatches) throw new Error(`Workbench orientation does not match these exact Solids: predicted ${predictedSizeMm.join(" × ")} mm, DFM reported ${expectedSizeMm.join(" × ")} mm`);
-    const after = await journaled("orient-bodies-for-print", purpose, { bodyIds, rotationDeg, expectedSizeMm, pivotMm },
-      () => operations.rotateBodiesByXyz(bodyIds, pivotMm, rotationDeg, current));
+    let reconciled: RuntimeState | undefined;
+    await journaled("orient-bodies-for-print", purpose, { bodyIds, rotationDeg, expectedSizeMm, pivotMm },
+      () => operations.rotateBodiesByXyz(bodyIds, pivotMm, rotationDeg, current), (_, state) => { reconciled = state; });
+    if (!reconciled) throw new Error("Print orientation completed without a captured scene snapshot; reconcile the construction journal before retrying");
+    const after: RuntimeState = reconciled;
     const actualBodies = bodyIds.map((id) => after.bodies.find((candidate) => candidate.id === id));
     if (actualBodies.some((body) => !body || body.type !== "Solid" || !body.boundsMm)) throw new Error("An oriented Solid is missing from the current native B-Rep state");
     const measuredBoundsMm = unionBounds(actualBodies.map((body) => body!.boundsMm!));
@@ -3900,5 +3978,5 @@ function provenanceSafeUrl(value: string): string {
 }
 
 function result(value: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
+  return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
 }

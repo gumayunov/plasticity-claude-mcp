@@ -1296,6 +1296,19 @@ test("Codex tool router catalogs and validates every registered operation", asyn
   assert.equal(catalogTotal, registered.tools.length - 1);
   assert.equal(catalogNames.size, catalogTotal, "catalog pages must cover every registered operation without duplicates");
 
+  const listing = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "hole", limit: 10 } }));
+  assert.ok(listing.tools.length > 3);
+  for (const item of listing.tools as Array<Record<string, unknown>>) {
+    assert.equal("inputSchema" in item, false, "long catalog pages list summaries, not schemas");
+    assert.equal(typeof item.summary, "string");
+  }
+  const forced = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "hole", limit: 10, schemas: true } }));
+  assert.ok((forced.tools as Array<Record<string, unknown>>).every((item) => typeof item.inputSchema === "object"));
+  const exactName = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "plasticity_create_through_hole" } }));
+  assert.deepEqual((exactName.tools as Array<{ name: string }>).map((item) => item.name), ["plasticity_create_through_hole"],
+    "an exact name selects that operation even when other names contain it");
+  assert.equal(JSON.stringify(exactName).includes("prefixItems"), false, "uniform vectors are exported as fixed-length arrays");
+
   const invalid = await client.callTool({ name: "plasticity_call", arguments: {
     toolName: "plasticity_create_box",
     arguments: { originMm: [0, 0, 0], sizeMm: [0, 20, 30], revision: "r1" },
@@ -2953,12 +2966,12 @@ test("native mutation responses use the reconciled state and include a compact e
   assert.equal(response.isError, undefined);
   const result = JSON.parse((response.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text ?? "null");
   assert.equal(result.revision, "r2");
-  assert.equal(result.bodyPagination.total, 61);
-  assert.equal(result.bodyPagination.limit, 20);
-  assert.equal(result.bodyPagination.nextOffset, 20);
-  assert.equal(result.bodies.length, 20);
-  assert.ok(result.bodies.every((body: Record<string, unknown>) => !("faces" in body) && !("edges" in body)
-    && !("faceIds" in body) && !("edgeIds" in body) && !("vertices" in body)));
+  assert.equal(result.bodyCount, 61);
+  assert.equal("bodies" in result, false, "unchanged bodies are read with plasticity_status, not repeated after every edit");
+  assert.deepEqual(result.construction, { activePlaneId: null, planeStateToken: "p0", viewStateToken: "v0", planeIds: [] });
+  assert.equal(result.regionCount, 0);
+  assert.equal("removed" in result.change, false, "empty change lists are omitted");
+  assert.equal("groupsChanged" in result.change, false, "false change flags are omitted");
   assert.deepEqual(result.change.added, [{
     id: 60, versionId: 160, type: "Solid", name: "Body 60", boundsMm,
     faceCount: 1, edgeCount: 1, vertexCount: 1,
@@ -2968,6 +2981,52 @@ test("native mutation responses use the reconciled state and include a compact e
   assert.doesNotMatch(JSON.stringify(result), /"surfaceType"|"curveType"|"vertexIds"/);
   assert.ok(JSON.stringify(result).length < JSON.stringify(state).length / 5,
     "mutation responses should not repeat the full native B-Rep payload");
+  await client.close(); await server.close();
+});
+
+test("body info pages faces, edges, and vertices of one body and rejects pages from another revision", async () => {
+  const boundsMm = { min: [0, 0, 0] as [number, number, number], max: [1, 1, 1] as [number, number, number] };
+  const faces = Array.from({ length: 7 }, (_, index) => ({
+    id: `f${index}`, surfaceType: "plane", planar: true, centerMm: [0, 0, 0] as [number, number, number],
+    normal: [0, 0, 1] as [number, number, number], radiusMm: null, blendRadiusMm: null,
+    axisOriginMm: null, axisDirection: null, boundsMm, edgeIds: [],
+  }));
+  const edges = Array.from({ length: 12 }, (_, index) => ({
+    id: `e${index}`, curveType: "line", line: true, circle: false, lengthMm: 1,
+    centerMm: [0, 0, 0] as [number, number, number], tangent: [1, 0, 0] as [number, number, number],
+    boundsMm, faceIds: [], vertexIds: [],
+  }));
+  let state: RuntimeState = { ...emptyState(), bodies: [{
+    id: 5, versionId: 9, type: "Solid", name: "Shaft", boundsMm,
+    faceIds: faces.map((face) => face.id), edgeIds: edges.map((edge) => edge.id), faces, edges,
+    vertices: [{ id: 1, positionMm: [0, 0, 0], edgeIds: [], faceIds: [] }],
+  }] };
+  const operations = { async state() { return state; } } as unknown as PlasticityOperations;
+  const fake = {
+    async windows() { return []; }, async connect() { return state; }, get() { return operations; },
+    capabilities() { return { bindings: [], operations: unavailableConstruction() }; },
+    async captureSnapshot() { return {}; }, async changesSince() { return {}; }, async waitForChange() { return {}; },
+  } satisfies SessionLike;
+  const server = createServer(fake);
+  const client = new Client({ name: "body-info-pages-client", version: "1.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await server.connect(serverTransport); await client.connect(clientTransport);
+
+  const first = parseToolJson(await client.callTool({ name: "plasticity_body_info", arguments: { id: 5, include: ["edges"], limit: 5 } }));
+  assert.deepEqual(first.body.edges.map((edge: { id: string }) => edge.id), ["e0", "e1", "e2", "e3", "e4"]);
+  assert.equal("faces" in first.body, false, "collections outside include are not returned");
+  assert.equal("faceIds" in first.body, false, "id lists duplicate the paged collections");
+  assert.deepEqual([first.body.faceCount, first.body.edgeCount, first.body.vertexCount], [7, 12, 1]);
+  assert.deepEqual(first.pagination, { edges: { offset: 0, limit: 5, total: 12, nextOffset: 5 } });
+
+  const last = parseToolJson(await client.callTool({ name: "plasticity_body_info", arguments: { id: 5, offset: 10, limit: 5, expectedRevision: first.revision } }));
+  assert.deepEqual(last.body.edges.map((edge: { id: string }) => edge.id), ["e10", "e11"]);
+  assert.equal(last.pagination.edges.nextOffset, null);
+  assert.deepEqual(last.body.faces, [], "an offset past a shorter collection returns an empty page");
+
+  state = { ...state, revision: "r2" };
+  const stale = await client.callTool({ name: "plasticity_body_info", arguments: { id: 5, offset: 5, expectedRevision: first.revision } });
+  assert.equal(stale.isError, true);
   await client.close(); await server.close();
 });
 
@@ -5293,19 +5352,19 @@ test("serializes compact curve inspection and all native rebuild modes", async (
   const inspected = await client.callTool({ name: "plasticity_inspect_curve_structure", arguments: { ids: [7], revision: state.revision } });
   assert.equal(inspected.isError, undefined);
   const inspectedText = (inspected.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text;
-  assert.match(inspectedText ?? "", /"controlPointCount": 7/);
+  assert.match(inspectedText ?? "", /"controlPointCount":7/);
   assert.deepEqual(nativeCalls.at(-1)?.values, [{ ids: [7] }]);
   const evaluated = await client.callTool({ name: "plasticity_evaluate_curve_segments", arguments: {
     samples: [{ bodyId: 7, segmentEntityId: 99, normalizedParameter: 0.5 }], revision: state.revision,
   } });
   assert.equal(evaluated.isError, undefined);
   const evaluatedText = (evaluated.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text;
-  assert.match(evaluatedText ?? "", /"positionMm": \[/);
+  assert.match(evaluatedText ?? "", /"positionMm":\[/);
   assert.deepEqual(nativeCalls.at(-1)?.values, [{ samples: [{ bodyId: 7, segmentEntityId: 99, normalizedParameter: 0.5 }] }]);
   const planarity = await client.callTool({ name: "plasticity_inspect_curve_planarity", arguments: { ids: [7], revision: state.revision } });
   assert.equal(planarity.isError, undefined);
   const planarityText = (planarity.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text;
-  assert.match(planarityText ?? "", /"planar": false/);
+  assert.match(planarityText ?? "", /"planar":false/);
   const listedControlPoints = await client.callTool({ name: "plasticity_list_curve_control_points", arguments: { ids: [7], revision: state.revision } });
   assert.equal(listedControlPoints.isError, undefined);
   const listedControlPointsText = (listedControlPoints.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text;
@@ -5448,7 +5507,7 @@ test("serializes exact surface inspection, degree elevation, face matching, and 
   const inspected = await client.callTool({ name: "plasticity_inspect_surface_structure", arguments: { faces, revision: state.revision } });
   assert.equal(inspected.isError, undefined);
   const inspectedText = (inspected.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text;
-  assert.match(inspectedText ?? "", /"uControlPointCount": 6/);
+  assert.match(inspectedText ?? "", /"uControlPointCount":6/);
   assert.deepEqual(nativeCalls.at(-1)?.values, [{ faces }]);
 
   const raised = await client.callTool({ name: "plasticity_raise_surface_degree", arguments: { faces, revision: state.revision } });
@@ -5606,7 +5665,7 @@ test("orients a rigid Solid group only when its union native bounds match the Wo
   assert.equal(duplicateIds.isError, true, "a body must not be rotated twice by one request");
 
   const applied = await call([5, 40, 10]);
-  assert.equal(applied.isError, undefined);
+  assert.equal(applied.isError, undefined, JSON.stringify(applied.content));
   const result = JSON.parse((applied.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text ?? "null");
   assert.equal(result.status, "verified");
   assert.equal(result.measurementSource, "native-brep");

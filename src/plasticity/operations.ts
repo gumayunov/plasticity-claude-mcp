@@ -7772,22 +7772,30 @@ export class PlasticityOperations {
     revision: string,
   ): Promise<RuntimeState> {
     await this.assertRevision(revision);
-    await this.runtime.mutate(`async function (Factory, args) {
-      ${findView}
-      ${commandStart("RevolveCommand")}
-      const view = find(args.id);
-      if (view.constructor.name !== 'Wire') throw new Error('Profile must be a Wire');
-      factory.curves = [view];
-      factory.origin.fromArray(args.axisOrigin);
-      factory.axis.fromArray(args.axis).normalize();
-      factory.degrees = args.angleDegrees;
-      ${commandEnd}
-    }`, ["RevolveFactory"], [{
-      id,
-      axisOrigin: toMeters(axisOriginMm),
-      axis,
-      angleDegrees,
-    }]);
+    try {
+      await this.runtime.mutate(`async function (Factory, args) {
+        ${findView}
+        ${commandStart("RevolveCommand")}
+        const view = find(args.id);
+        if (view.constructor.name !== 'Wire') throw new Error('Profile must be a Wire');
+        factory.curves = [view];
+        factory.origin.fromArray(args.axisOrigin);
+        factory.axis.fromArray(args.axis).normalize();
+        factory.degrees = args.angleDegrees;
+        ${commandEnd}
+      }`, ["RevolveFactory"], [{
+        id,
+        axisOrigin: toMeters(axisOriginMm),
+        axis,
+        angleDegrees,
+      }]);
+    } catch (error) {
+      // Parasolid cannot spin a Wire edge that lies on the axis: it would sweep a surface of zero area.
+      if (error instanceof Error && /PK_ERROR_impossible_spin/.test(error.message)) {
+        throw new Error(`${error.message}. A profile edge lies on the revolve axis or the profile crosses it. For a solid of revolution, omit the edge on the axis and revolve an open Wire whose two endpoints lie on the axis; keep the whole profile on one side of the axis.`);
+      }
+      throw error;
+    }
     return await this.state();
   }
 

@@ -9,6 +9,7 @@ import { frameFromOriginNormalX } from "./construction.ts";
 import { evaluateSvgCubicBezier, type SvgCubicBezier } from "./svg-cubic.ts";
 import { countActiveCurveSpans } from "./curve-span-count.ts";
 import type { PlasticityRuntime, RuntimeState } from "./runtime.ts";
+import { mutationOutcomeIsUncertain } from "./runtime.ts";
 
 const emptyConstruction: RuntimeState["construction"] = {
   planes: [],
@@ -2827,6 +2828,27 @@ test("rejects invalid refillet inputs before mutation", async () => {
   await assert.rejects(operations.refilletFaces([reference], -2, state.revision), /positive radius/i);
   await assert.rejects(operations.refilletFaces([reference], 1, "old-revision"), /stale reference/i);
   assert.equal(mutations, 0);
+});
+
+test("an impossible spin explains how to fix a profile edge lying on the axis", async () => {
+  const state: RuntimeState = {
+    targetId: "window-1", title: "Untitled - Plasticity", documentToken: "document-1", revision: "current-revision",
+    dbVersion: 1, undoDepth: 0, redoDepth: 0, regions: [], construction: emptyConstruction, bodies: [],
+  };
+  const runtime = {
+    async getState() { return state; },
+    async mutate() {
+      throw new Error("Plasticity command failed: Error: Operation failed at PK_BODY_spin with error `PK_ERROR_impossible_spin` (55)");
+    },
+  } as unknown as PlasticityRuntime;
+  const operations = new PlasticityOperations(runtime);
+
+  await assert.rejects(operations.revolveProfile(4, [0, 0, 0], [1, 0, 0], 360, state.revision), (error: Error) => {
+    assert.match(error.message, /^Plasticity command failed: .*PK_ERROR_impossible_spin/, "the native error stays first");
+    assert.match(error.message, /open Wire whose two endpoints lie on the axis/);
+    assert.equal(mutationOutcomeIsUncertain(error), false, "a rejected spin is a definite failure, not an uncertain outcome");
+    return true;
+  });
 });
 
 test("converts a revolve axis origin to meters and keeps public degrees", async () => {
