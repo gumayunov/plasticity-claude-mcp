@@ -9584,7 +9584,7 @@ export class PlasticityOperations {
     const staging = await mkdtemp(join(dirname(output), ".plasticity-save-"));
     const temporary = join(staging, "document.plasticity");
     try {
-      await this.runtime.mutate(`async function (path) { if (this.executor.isBusy) throw new Error('Plasticity is busy'); await this.saver.save(path); }`, [], [temporary]);
+      await this.runtime.mutate(`async function (path) { if (this.executor.isBusy) throw new Error('Plasticity is busy'); await this.saver.save(path); }`, [], [temporary], LONG_NATIVE_IMPORT_TIMEOUT_MS);
       const header = await readFile(temporary);
       if (header.length < 24 || header.subarray(0, 10).toString() !== "plasticity") throw new Error("Plasticity produced an invalid document");
       await copyFile(temporary, output, constants.COPYFILE_EXCL);
@@ -9650,8 +9650,8 @@ export class PlasticityOperations {
       await this.exec(command);
       if (failure) throw failure;
       this.document.filename = args.path;
-    }`, ["OpenFileFactory", "OpenFileCommand"], [{ path: input }]);
-    return await this.state();
+    }`, ["OpenFileFactory", "OpenFileCommand"], [{ path: input }], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+    return await this.state(LONG_NATIVE_IMPORT_TIMEOUT_MS);
   }
 
   async screenshot(outputPath: string): Promise<{ path: string; bytes: number }> {

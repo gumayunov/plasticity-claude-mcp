@@ -822,6 +822,31 @@ test("saves the open document over its own file through the native editor save",
   }
 });
 
+test("opens and backs up large documents with the long native timeout instead of the 10 s CDP default", async () => {
+  const root = await mkdtemp(join(tmpdir(), "plasticity-open-test-"));
+  const input = join(await realpath(root), "large.plasticity");
+  await writeFile(input, "plasticity-large-document-fixture");
+  const timeouts: Array<number | undefined> = [];
+  const state: RuntimeState = { targetId: "window-1", title: "Untitled - Plasticity", documentToken: "document-1", revision: "current-revision", dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [] };
+  const runtime = {
+    async getState() { return state; },
+    async mutate(_source: string, _bindings: string[], values: unknown[], timeoutMs?: number) {
+      timeouts.push(timeoutMs);
+      if (typeof values[0] === "string") await writeFile(values[0], "plasticity-backup-fixture");
+      return {};
+    },
+    isUncertain() { return false; },
+  } as unknown as PlasticityRuntime;
+  try {
+    await new PlasticityOperations(runtime).openDocument(input, join(root, "backup.plasticity"), state.revision);
+
+    assert.equal(timeouts.length, 2, "backup save and open each reach Plasticity once");
+    assert(timeouts.every((timeout) => timeout !== undefined && timeout >= 60_000), `expected long timeouts, got ${timeouts.join(", ")}`);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("imports a validated Parasolid file through the native Parasolid importer", async () => {
   const root = await mkdtemp(join(tmpdir(), "plasticity-parasolid-import-test-"));
   let call: { source: string; bindings: string[]; values: unknown[] } | undefined;
