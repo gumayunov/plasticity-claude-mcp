@@ -197,6 +197,9 @@ test("MCP initializes, lists tools, and validates tool input", async () => {
     assert.equal(output?.annotations?.readOnlyHint, false, `${name} writes a new artifact and is not read-only`);
     assert.equal(output?.annotations?.destructiveHint, false, `${name} refuses overwrites and must not be marked destructive`);
   }
+  const save = tools.tools.find((tool) => tool.name === "plasticity_save");
+  assert.equal(save?.annotations?.destructiveHint, true, "plasticity_save overwrites the open document's file");
+  assert.match(save?.description ?? "", /plasticity_save_copy/u);
   const matchFaces = tools.tools.find((tool) => tool.name === "plasticity_match_faces");
   assert.equal(matchFaces?.annotations?.readOnlyHint, false);
   assert.equal(matchFaces?.annotations?.destructiveHint, true, "surface replacement edits native CAD and remains destructive");

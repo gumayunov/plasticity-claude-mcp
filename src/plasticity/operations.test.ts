@@ -777,6 +777,51 @@ test("exports selected native bodies as a validated Parasolid file without overw
   }
 });
 
+test("saves the open document over its own file through the native editor save", async () => {
+  const root = await mkdtemp(join(tmpdir(), "plasticity-save-test-"));
+  const real = await realpath(root);
+  const documentPath = join(real, "part.plasticity");
+  await writeFile(documentPath, "plasticity-old");
+  let filename: string | null = documentPath;
+  let header = "plasticity";
+  const calls: Array<{ source: string; values: unknown[] }> = [];
+  const state: RuntimeState = { targetId: "window-1", title: "part.plasticity - Plasticity", documentToken: "document-1", revision: "current-revision", dbVersion: 1, undoDepth: 1, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [] };
+  const runtime = {
+    async getState() { return state; },
+    async read() { return filename; },
+    async mutate(source: string, _bindings: string[], values: unknown[]) {
+      calls.push({ source, values });
+      await writeFile(documentPath, `${header}-new-content`);
+      return { filename: documentPath, hasUnsavedChanges: false };
+    },
+    isUncertain() { return false; },
+  } as unknown as PlasticityRuntime;
+  try {
+    const operations = new PlasticityOperations(runtime);
+
+    // The caller may name the file through a symlinked path (/var vs /private/var on macOS).
+    const result = await operations.saveDocument(join(root, "part.plasticity"), state.revision);
+
+    assert.equal(calls.length, 1);
+    assert.match(calls[0]?.source ?? "", /await this\.save\(\)/u);
+    assert.deepEqual(calls[0]?.values, [{ filename: documentPath }]);
+    assert.deepEqual(result, { path: documentPath, bytes: "plasticity-new-content".length, hasUnsavedChanges: false, revision: state.revision });
+
+    await assert.rejects(operations.saveDocument(join(real, "other.plasticity"), state.revision), /refusing to save over a different file/u);
+    await assert.rejects(operations.saveDocument(join(real, "part.step"), state.revision), /must end in \.plasticity/u);
+    await assert.rejects(operations.saveDocument(documentPath, "stale-revision"), /stale reference/iu);
+    filename = null;
+    await assert.rejects(operations.saveDocument(documentPath, state.revision), /plasticity_save_copy/u);
+    assert.equal(calls.length, 1, "rejected saves must not reach Plasticity");
+
+    filename = documentPath;
+    header = "corrupted!";
+    await assert.rejects(operations.saveDocument(documentPath, state.revision), /invalid document/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("imports a validated Parasolid file through the native Parasolid importer", async () => {
   const root = await mkdtemp(join(tmpdir(), "plasticity-parasolid-import-test-"));
   let call: { source: string; bindings: string[]; values: unknown[] } | undefined;

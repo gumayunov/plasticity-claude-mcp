@@ -3682,6 +3682,8 @@ function createServerWithCatalog(
     await session.get().screenshot(path), false, { destructiveHint: false });
   tool("plasticity_save_copy", "Save the current document to a new .plasticity file without overwriting.", z.object({ path: z.string().min(1) }), async ({ path }) =>
     await session.get().saveCopy(path), false, { destructiveHint: false });
+  tool("plasticity_save", "Save the open document over its own .plasticity file, exactly like File > Save: Plasticity rotates its backup copies and clears the unsaved-changes flag. expectedPath must be the file the document is open from; a document that has never been saved is refused, use plasticity_save_copy for it.", z.object({ expectedPath: z.string().min(1), revision }).strict(), async ({ expectedPath, revision: current }) =>
+    await session.get().saveDocument(expectedPath, current));
   tool("plasticity_open_document", "Open a .plasticity document after writing the current document to a new backup file.", z.object({ path: z.string().min(1), backupPath: z.string().min(1), intent, revision }), async ({ path, backupPath, intent: purpose, revision: current }) =>
     await journaled("open-document", purpose, { path, backupPath }, () => session.get().openDocument(path, backupPath, current)));
   tool("plasticity_export_step", "Export exact B-Rep bodies to a new STEP file without overwriting.", z.object({ ids, path: z.string().min(1), revision }), async ({ ids: bodyIds, path, revision: current }) =>

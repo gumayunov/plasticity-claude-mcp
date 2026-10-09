@@ -20,6 +20,7 @@ Plasticity is driven over a loopback CDP connection. Units are millimetres and d
 - If a mutation times out or the connection drops, run `plasticity_reconcile` first. Never retry or undo blindly.
 - Verify results from native read-back: bounds from `plasticity_status`, exact geometry from `plasticity_body_info`, distances from the `plasticity_measure_*` operations. A screenshot is a visual check, not a measurement.
 - There is no "new document" operation. Ask the user to create one, or `plasticity_open_document` an existing file. Keep work with `plasticity_save_copy`.
+- `plasticity_save` saves the open document over its own file, like Cmd+S, and needs that file as `expectedPath`. Save only when the user asked for it.
 
 ## Gotchas
 

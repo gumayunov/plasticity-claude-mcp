@@ -9597,6 +9597,36 @@ export class PlasticityOperations {
     }
   }
 
+  async saveDocument(expectedPath: string, revision: string): Promise<{ path: string; bytes: number; hasUnsavedChanges: boolean; revision: string }> {
+    await this.assertRevision(revision);
+    const expected = resolve(expectedPath);
+    if (extname(expected).toLowerCase() !== ".plasticity") throw new Error("Expected path must end in .plasticity");
+    const current = await this.runtime.read<string | null>(`function () { return this.document?.filename || null; }`);
+    if (!current) throw new Error("The document has no file yet; use plasticity_save_copy to write it to a new file");
+    if (await canonicalPath(current) !== await canonicalPath(expected)) {
+      throw new Error(`The document is open from ${current}, not ${expected}; refusing to save over a different file`);
+    }
+    const startedAt = Date.now();
+    const result = await this.runtime.mutate<{ filename: string; hasUnsavedChanges: boolean }>(`async function (args) {
+      if (this.executor.isBusy) throw new Error('Plasticity is busy');
+      if (this.document.filename !== args.filename) throw new Error('The document file changed before saving');
+      await this.save();
+      return { filename: this.document.filename, hasUnsavedChanges: Boolean(this.hasUnsavedChanges) };
+    }`, [], [{ filename: current }], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+    const saved = await stat(result.filename);
+    if (saved.mtimeMs < startedAt - 2000) throw new Error(`Plasticity did not write ${result.filename}`);
+    const handle = await open(result.filename, "r");
+    try {
+      const header = Buffer.alloc(10);
+      await handle.read(header, 0, header.length, 0);
+      if (header.toString() !== "plasticity") throw new Error("Plasticity produced an invalid document");
+    } finally {
+      await handle.close();
+    }
+    const state = await this.state();
+    return { path: result.filename, bytes: saved.size, hasUnsavedChanges: result.hasUnsavedChanges, revision: state.revision };
+  }
+
   async openDocument(inputPath: string, backupPath: string, revision: string): Promise<RuntimeState> {
     await this.assertRevision(revision);
     const input = await realpath(resolve(inputPath));
@@ -10013,6 +10043,17 @@ async function assertAbsent(path: string): Promise<void> {
     throw error;
   }
   throw new Error(`Refusing to overwrite existing file: ${path}`);
+}
+
+// Resolves symlinks when the file exists, so /tmp and /private/tmp compare equal.
+async function canonicalPath(path: string): Promise<string> {
+  const absolute = resolve(path);
+  try {
+    return await realpath(absolute);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return absolute;
+    throw error;
+  }
 }
 
 function validateBinaryStl(data: Buffer): number {
