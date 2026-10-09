@@ -8467,30 +8467,58 @@ export class PlasticityOperations {
   }
 
   async remove(ids: number[], revision: string): Promise<RuntimeState> {
-    await this.assertRevision(revision);
+    if (ids.length === 0 || new Set(ids).size !== ids.length) throw new Error("Delete needs nonempty unique body IDs");
+    const before = await this.assertRevision(revision);
+    const known = new Set(before.bodies.map((body) => body.id));
+    const missing = ids.filter((id) => !known.has(id));
+    if (missing.length > 0) throw new Error(`Unknown current body IDs: ${missing.join(", ")}`);
+    // Plasticity's DeleteCommand deletes whatever is selected when it runs. Exec can interrupt a
+    // user's active command, which restores that command's own selection (for example a face), so
+    // the selection is set inside execute, right before the native delete, and checked there.
     await this.runtime.mutate(`async function (args) {
       ${findView}
       if (this.executor.isBusy) throw new Error('Plasticity is busy');
-      this.selection.selected.removeAll();
-      for (const view of args.ids.map(find)) this.selection.selected.add(view);
+      const editor = this;
+      const views = args.ids.map(find);
       const command = new this.commands.DeleteCommand(this);
       command.remember = false;
       let failure;
       const execute = command.execute.bind(command);
       command.execute = async function () {
-        try { return await execute(); }
-        catch (error) { failure = error; throw error; }
+        try {
+          const selected = editor.selection.selected;
+          selected.removeAll();
+          for (const view of views) selected.add(view);
+          const items = selected.solidIds.size + selected.sheetIds.size + selected.curveIds.size;
+          const other = selected.faceIds.size + selected.edgeIds.size + selected.regionIds.size + selected.segmentIds.size
+            + selected.curveVertexIds.size + selected.curveCvIds.size + selected.shellCvIds.size + selected.groupIds.size
+            + selected.emptyIds.size + selected.measurementIds.size + selected.planeIds.size;
+          if (items !== args.ids.length || other !== 0) throw new Error('Selection for delete is not exactly the requested bodies');
+          return await execute();
+        } catch (error) { failure = error; throw error; }
       };
       await this.exec(command);
       if (failure) throw failure;
-    }`, [], [{ ids }]);
-    return await this.state();
+    }`, [], [{ ids }], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+    const after = await this.state(LONG_NATIVE_IMPORT_TIMEOUT_MS);
+    const remaining = new Map(after.bodies.map((body) => [body.id, body]));
+    const notRemoved = ids.filter((id) => remaining.has(id));
+    const changed = before.bodies.filter((body) => !ids.includes(body.id)).filter((body) => {
+      const current = remaining.get(body.id);
+      return !current || current.versionId !== body.versionId || current.type !== body.type;
+    }).map((body) => body.id);
+    const added = after.bodies.filter((body) => !known.has(body.id)).map((body) => body.id);
+    if (notRemoved.length > 0 || changed.length > 0 || added.length > 0) {
+      await this.runtime.mutate(`async function () { await this.undo(); }`, [], [], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+      throw new Error(`Delete changed more than the requested bodies and was undone (not removed: ${notRemoved.join(", ") || "none"}; changed: ${changed.join(", ") || "none"}; added: ${added.join(", ") || "none"})`);
+    }
+    return after;
   }
 
   async undo(revision?: string): Promise<RuntimeState> {
     if (revision) await this.assertRevision(revision);
-    await this.runtime.mutate(`async function () { if (this.executor.isBusy) throw new Error('Plasticity is busy'); await this.undo(); }`, []);
-    return await this.state();
+    await this.runtime.mutate(`async function () { if (this.executor.isBusy) throw new Error('Plasticity is busy'); await this.undo(); }`, [], [], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+    return await this.state(LONG_NATIVE_IMPORT_TIMEOUT_MS);
   }
 
   async redo(revision?: string): Promise<RuntimeState> {

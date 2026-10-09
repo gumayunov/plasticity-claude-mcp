@@ -1756,6 +1756,57 @@ test("duplicates independent native Solid and Sheet bodies in one grouped operat
   assert.equal(calls.length, mutationCount);
 });
 
+test("deletes exactly the requested bodies and undoes a delete that touched anything else", async () => {
+  const body = (id: number, versionId: number, type = "Solid") => ({ id, versionId, type, name: `Body ${id}`, boundsMm: null, faceIds: [], edgeIds: [], faces: [], edges: [], vertices: [] });
+  const stateWith = (revision: string, bodies: ReturnType<typeof body>[]): RuntimeState => ({ targetId: "window-1", title: "part.plasticity - Plasticity", documentToken: "document-1", revision, dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies });
+  const initial = stateWith("current-revision", [body(7, 70), body(8, 80), body(9, 90)]);
+  let current = initial;
+  let nextAfterDelete = stateWith("after-delete", [body(9, 90)]);
+  const calls: Array<{ source: string; values: unknown[]; timeoutMs: number | undefined }> = [];
+  const runtime = {
+    async getState() { return current; },
+    async mutate(source: string, _bindings: string[], values: unknown[], timeoutMs?: number) {
+      calls.push({ source, values, timeoutMs });
+      if (source.includes("DeleteCommand")) current = nextAfterDelete;
+      else if (source.includes("this.undo()")) current = initial;
+      return {};
+    },
+    isUncertain() { return false; },
+  } as unknown as PlasticityRuntime;
+  const operations = new PlasticityOperations(runtime);
+
+  const result = await operations.remove([7, 8], initial.revision);
+
+  assert.deepEqual(result.bodies.map((item) => item.id), [9]);
+  assert.equal(calls.length, 1);
+  const source = calls[0]?.source ?? "";
+  assert.match(source, /command\.execute = async function \(\) \{\s*try \{\s*const selected = editor\.selection\.selected;\s*selected\.removeAll\(\);/u, "selection is set inside execute, right before the native delete");
+  assert.match(source, /Selection for delete is not exactly the requested bodies/u);
+  assert(calls[0]?.timeoutMs !== undefined && calls[0].timeoutMs >= 60_000);
+
+  // The native delete removed a face of body 8 (it became a Sheet) instead of deleting 7 and 8.
+  current = initial;
+  calls.length = 0;
+  nextAfterDelete = stateWith("after-bad-delete", [body(7, 70), body(8, 81, "Sheet"), body(9, 90)]);
+  await assert.rejects(operations.remove([7, 8], initial.revision), /undone \(not removed: 7, 8; changed: none; added: none\)/u);
+  assert.equal(calls.length, 2);
+  assert.match(calls[1]?.source ?? "", /this\.undo\(\)/u);
+  assert.deepEqual(current, initial);
+
+  // Another body changed while the requested ones were removed.
+  calls.length = 0;
+  nextAfterDelete = stateWith("after-wide-delete", [body(9, 91, "Sheet")]);
+  await assert.rejects(operations.remove([7, 8], initial.revision), /changed: 9/u);
+  assert.match(calls[1]?.source ?? "", /this\.undo\(\)/u);
+
+  calls.length = 0;
+  await assert.rejects(operations.remove([], initial.revision), /nonempty unique/u);
+  await assert.rejects(operations.remove([7, 7], initial.revision), /nonempty unique/u);
+  await assert.rejects(operations.remove([42], initial.revision), /Unknown current body IDs: 42/u);
+  await assert.rejects(operations.remove([7], "stale-revision"), /stale reference/iu);
+  assert.equal(calls.length, 0, "rejected deletes must not reach Plasticity");
+});
+
 test("realizes and deletes current native instances while rejecting stale identities", async () => {
   const calls: Array<{ source: string; bindings: string[]; values: unknown[] }> = [];
   const instance = {
