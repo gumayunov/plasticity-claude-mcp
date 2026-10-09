@@ -827,21 +827,31 @@ test("opens and backs up large documents with the long native timeout instead of
   const input = join(await realpath(root), "large.plasticity");
   await writeFile(input, "plasticity-large-document-fixture");
   const timeouts: Array<number | undefined> = [];
+  const calls: Array<{ source: string; bindings: string[] }> = [];
+  let openedFilename = input;
   const state: RuntimeState = { targetId: "window-1", title: "Untitled - Plasticity", documentToken: "document-1", revision: "current-revision", dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [] };
   const runtime = {
     async getState() { return state; },
-    async mutate(_source: string, _bindings: string[], values: unknown[], timeoutMs?: number) {
+    async mutate(source: string, bindings: string[], values: unknown[], timeoutMs?: number) {
       timeouts.push(timeoutMs);
+      calls.push({ source, bindings });
       if (typeof values[0] === "string") await writeFile(values[0], "plasticity-backup-fixture");
-      return {};
+      return { filename: openedFilename };
     },
     isUncertain() { return false; },
   } as unknown as PlasticityRuntime;
   try {
-    await new PlasticityOperations(runtime).openDocument(input, join(root, "backup.plasticity"), state.revision);
+    const operations = new PlasticityOperations(runtime);
+    await operations.openDocument(input, join(root, "backup.plasticity"), state.revision);
 
     assert.equal(timeouts.length, 2, "backup save and open each reach Plasticity once");
     assert(timeouts.every((timeout) => timeout !== undefined && timeout >= 60_000), `expected long timeouts, got ${timeouts.join(", ")}`);
+    // File > Open path: resets Undo history and the unsaved-changes flag of the previous document.
+    assert.match(calls[1]?.source ?? "", /await this\.open\(args\.path\)/u);
+    assert.deepEqual(calls[1]?.bindings, []);
+
+    openedFilename = join(root, "other.plasticity");
+    await assert.rejects(operations.openDocument(input, join(root, "backup-2.plasticity"), state.revision), /instead of/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

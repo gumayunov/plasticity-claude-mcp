@@ -9659,26 +9659,23 @@ export class PlasticityOperations {
     await this.assertRevision(revision);
     const input = await realpath(resolve(inputPath));
     if (extname(input).toLowerCase() !== ".plasticity") throw new Error("Input must end in .plasticity");
-    const header = await readFile(input);
-    if (header.length < 24 || header.subarray(0, 10).toString() !== "plasticity") throw new Error("Input is not a valid Plasticity document");
+    const handle = await open(input, "r");
+    try {
+      const header = Buffer.alloc(24);
+      const { bytesRead } = await handle.read(header, 0, header.length, 0);
+      if (bytesRead < 24 || header.subarray(0, 10).toString() !== "plasticity") throw new Error("Input is not a valid Plasticity document");
+    } finally {
+      await handle.close();
+    }
     await this.saveCopy(backupPath);
-    await this.runtime.mutate(`async function (Factory, Command, args) {
+    // editor.open is what File > Open runs: unlike OpenFileFactory it also resets Undo history and
+    // the unsaved-changes flag, so Undo cannot reach edits made in the previous document.
+    const opened = await this.runtime.mutate<{ filename: string }>(`async function (args) {
       if (this.executor.isBusy) throw new Error('Plasticity is busy');
-      const editor = this;
-      let failure;
-      const command = new Command(this);
-      command.remember = false;
-      command.execute = async function () {
-        try {
-          const factory = new Factory(editor).resource(this);
-          factory.filename = args.path;
-          return await factory.commit();
-        } catch (error) { failure = error; throw error; }
-      };
-      await this.exec(command);
-      if (failure) throw failure;
-      this.document.filename = args.path;
-    }`, ["OpenFileFactory", "OpenFileCommand"], [{ path: input }], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+      await this.open(args.path);
+      return { filename: this.document.filename };
+    }`, [], [{ path: input }], LONG_NATIVE_IMPORT_TIMEOUT_MS);
+    if (await canonicalPath(opened.filename) !== input) throw new Error(`Plasticity opened ${opened.filename} instead of ${input}`);
     return await this.state(LONG_NATIVE_IMPORT_TIMEOUT_MS);
   }
 
