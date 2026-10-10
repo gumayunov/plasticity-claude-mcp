@@ -12,17 +12,17 @@
 
 ## Global Constraints
 
-- «Plasticity остаётся единственным CAD и источником фактической геометрии.»
-- «Основной интерфейс — чат Codex.»
-- «Workbench опционален: его отсутствие не блокирует вопросы, расчёт, согласование, построение или получение отчёта.»
-- «Первый выпуск не включает FEM, расчёт крепежа, потерю устойчивости, удар, усталость, ползучесть и термомеханический анализ.»
-- «Масса не принимается за силу без явного преобразования.»
-- «Универсальный скрытый коэффициент запаса не используется.»
-- «Аналитический вызов не получает инструментов изменения Plasticity, печати или повторного вызова самого себя.»
-- «Ошибка или тайм-аут возвращаются основному агенту; автоматического повторного платного запуска нет.»
-- «Mesh-bbox допустим только для ориентирования.»
-- «Пакет может состоять из нескольких нативных шагов истории.»
-- «После перезапуска оно [делегирование] не восстанавливается автоматически.»
+- "Plasticity remains the only CAD and the source of actual geometry."
+- "The main interface is the Codex chat."
+- "Workbench is optional: without it, questions, calculation, approval, construction and the report still work."
+- "The first release does not include FEM, fastener calculation, buckling, impact, fatigue, creep or thermomechanical analysis."
+- "Mass is not taken as force without an explicit conversion."
+- "No universal hidden safety factor is used."
+- "The analysis call gets no tools for changing Plasticity, printing or calling itself again."
+- "An error or timeout is returned to the main agent; there is no automatic paid rerun."
+- "A mesh bbox is acceptable only for orientation."
+- "A package can consist of several native history steps."
+- "It [the delegation] is not restored automatically after a restart."
 - Node.js >=24; retain existing dependencies and native transport; no new solver or UI dependency.
 - Public units are mm, N, kg, MPa, degrees and Celsius. Calculations use the coherent N/mm/MPa system (MPa = N/mm²).
 - Do not alter saved user documents, restart Plasticity automatically, send prints, or inherit a broad automation authorization for a new production part.

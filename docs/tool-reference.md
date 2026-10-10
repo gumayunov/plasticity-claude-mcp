@@ -2043,9 +2043,9 @@ The live acceptance run created an 80 × 40 × 8 mm plate with two Ø6 mm
 through-holes and four R2 outer vertical fillets. It verified Undo/Redo,
 saved `.plasticity` and STEP files, reopened the native document, imported the
 STEP, and captured a screenshot. Evidence and exact artifact paths are in
-[the native-access report](./native-access-report.md). Текущее состояние
-каждого требования и проверки, которым ещё нужно внешнее устройство, сведены
-в [матрицу готовности](./acceptance-matrix.md).
+[the native-access report](./native-access-report.md). The current status of
+each requirement and the checks that still need an external device are collected
+in the [acceptance matrix](./acceptance-matrix.md).
 
 This adapter is pinned to Plasticity 26.1.3. Plasticity's internal interfaces
 are undocumented and may change in another release.
@@ -2185,151 +2185,151 @@ plane normal. Circles and polylines can instead use a current construction-plane
 identity and 2D coordinates. Closed curves generate revision-bound regions;
 extruding an unambiguous profile or an explicit region creates a capped Solid.
 
-## Workbench: модель, таблицы и планшет
+## Workbench: model, tables and tablet
 
-Workbench объединяет проекты, интерактивный STEP-просмотрщик, валидируемые
-таблицы размеров, аннотации стилусом и проверку подготовки к печати. Общение с
-агентом остаётся в Codex; веб-интерфейс не содержит отдельного чата. Запуск в
-локальной сети:
+Workbench combines projects, an interactive STEP viewer, validated dimension
+tables, stylus annotations and print-preparation checks. Conversation with the
+agent stays in Codex; the web interface has no separate chat. To run it on the
+local network:
 
 ```sh
 npm run start:workbench -- --lan
 ```
 
-На Mac выполните `npm --workspace workbench run open:owner -- --lan`, чтобы открыть
-владельческую сессию; напечатанный адрес сам по себе прав владельца не даёт.
-В проекте нажмите **Поделиться**, перенесите
-одноразовую ссылку на планшет и рисуйте поверх зафиксированной версии модели.
-Аннотации отправляются агенту одним пакетом только после явной кнопки. Поля
-размеров проверяют числовой тип, диапазон, шаг и целочисленные значения до
-записи и повторно на сервере. Просмотрщик предоставляет изометрический,
-фронтальный и верхний ракурсы, ортографические виды, Z-сечение, вписывание,
-выбор, скрытие, изоляцию и прозрачность тел. Попавшая в модель стилусная
-отметка сохраняет 3D-точку и, при наличии сопоставления, ID тела и грани.
-Точный порядок запуска, MCP-регистрация и восстановление
-описаны в [руководстве Workbench](./workbench-operations.md).
+On the Mac, run `npm --workspace workbench run open:owner -- --lan` to open an
+owner session; the printed address alone does not grant owner rights.
+In a project, press **Поделиться** (Share), transfer the
+one-time link to the tablet, and draw over a pinned model version.
+Annotations are sent to the agent as one batch, and only after an explicit button
+press. Dimension fields check numeric type, range, step and integer values before
+saving, and again on the server. The viewer provides isometric,
+front and top views, orthographic views, a Z section, fit to view,
+selection, hiding, isolation and transparency of bodies. A stylus mark that lands
+on the model stores the 3D point and, when a mapping exists, the body and face IDs.
+The exact startup order, MCP registration and recovery
+are described in the [Workbench guide](./workbench-operations.md).
 
-Workbench MCP публикует версии модели, точные B-Rep измерения, таблицы и статусы:
+The Workbench MCP publishes model versions, exact B-Rep measurements, tables and statuses:
 
 ```sh
 codex mcp add plasticity-workbench -- npm --prefix ./workbench run mcp
 ```
 
-MCP сначала ищет уже работающий Workbench на loopback и локальных приватных
-IPv4. Если сервис не найден, он запускает его сам с `--lan`. Через
-`workbench_list_projects` и `workbench_create_project` агент подготавливает
-проект и получает его отдельный `workspacePath` без текстового чата в браузере.
+The MCP first looks for an already running Workbench on loopback and local private
+IPv4 addresses. If no service is found, it starts one itself with `--lan`. Through
+`workbench_list_projects` and `workbench_create_project`, the agent prepares a
+project and receives its own `workspacePath` without a text chat in the browser.
 
-Для публикации файла агент сохраняет его внутри `workspacePath` проекта и
-вызывает `workbench_upload_project_artifact` с относительным путём. Реальный
-путь повторно проверяется после разрешения симлинков; выход за каталог проекта,
-неподдерживаемое расширение, каталог вместо файла и размер свыше 250 MiB
-отклоняются.
+To publish a file, the agent saves it inside the project's `workspacePath` and
+calls `workbench_upload_project_artifact` with a relative path. The real
+path is checked again after symlinks are resolved; escaping the project directory,
+an unsupported extension, a directory instead of a file, and a size over 250 MiB
+are rejected.
 
-`workbench_register_reference` сохраняет источник, URL, SHA-256 загруженного
-файла, лицензию, тип источника, роль в сцене и уверенность каждого размера.
-Критичные неизвестные размеры выводятся отдельной таблицей. Сам Workbench не
-скачивает произвольные URL: агент сначала проверяет источник, загружает файл как
-артефакт и затем регистрирует его происхождение.
+`workbench_register_reference` stores the source, URL, SHA-256 of the uploaded
+file, license, source type, role in the scene and the confidence of each dimension.
+Critical unknown dimensions are shown in a separate table. Workbench itself does not
+download arbitrary URLs: the agent first checks the source, uploads the file as an
+artifact and then registers its provenance.
 
-`plasticity_construction_history` читает локальную историю команд, а
-`plasticity_construction_journal` дополнительно сравнивает живую сцену с
-последним записанным событием и сообщает о неизвестном исходе или ручной
-правке. История хранится в `.plasticity-mcp/construction-history`; для другого
-пути задайте `PLASTICITY_CONSTRUCTION_HISTORY_ROOT`. Агент публикует контрольные
-снимки через
-`workbench_publish_construction_journal`; Workbench сохраняет их в SQLite с
-ревизией проекта. Таким образом MCP сохраняет историю без Workbench; Workbench
-привязывает опубликованные снимки к проектной ревизии. Снимки журнала содержат
-компактные B-Rep bounds и топологические количества, а не полные face/edge
-данные. Текущий журнал также отдаёт записи страницами (`offset`/`limit`) и
-хранит только компактные изменения тел в памяти процесса. После перезапуска вызовите `plasticity_construction_history`, затем
-подключитесь к явному окну и вызовите `plasticity_construction_journal`, чтобы
-проверить `durableSyncStatus`. История — диагностическая, старые операции не
-переигрываются и не отменяются автоматически. См. [construction history](./construction-history.md)
-для статусов и восстановления. STEP-происхождение хранится отдельно в
-`.plasticity-mcp/references`; его записи также являются историческими и не
-служат текущими ссылками на тела после правок. Полученные STEP-файлы по умолчанию
-остаются в `.plasticity-mcp/reference-artifacts`; путь настраивается через
-`PLASTICITY_REFERENCE_ARTIFACT_ROOT`. См. [reference acquisition](./reference-acquisition.md)
-для сетевых ограничений и происхождения загрузок.
+`plasticity_construction_history` reads the local command history, and
+`plasticity_construction_journal` also compares the live scene with the
+last recorded event and reports an unknown outcome or a manual
+edit. The history is stored in `.plasticity-mcp/construction-history`; for a different
+path, set `PLASTICITY_CONSTRUCTION_HISTORY_ROOT`. The agent publishes checkpoint
+snapshots through
+`workbench_publish_construction_journal`; Workbench stores them in SQLite with
+the project revision. The MCP thus keeps the history without Workbench; Workbench
+binds published snapshots to a project revision. Journal snapshots contain
+compact B-Rep bounds and topology counts, not full face/edge
+data. The current journal also returns entries in pages (`offset`/`limit`) and
+keeps only compact body changes in process memory. After a restart, call `plasticity_construction_history`, then
+connect to an explicit window and call `plasticity_construction_journal` to
+check `durableSyncStatus`. The history is diagnostic; old operations are not
+replayed or undone automatically. See [construction history](./construction-history.md)
+for statuses and recovery. STEP provenance is stored separately in
+`.plasticity-mcp/references`; its records are also historical and do not
+serve as current body references after edits. Downloaded STEP files by default
+stay in `.plasticity-mcp/reference-artifacts`; the path is configured through
+`PLASTICITY_REFERENCE_ARTIFACT_ROOT`. See [reference acquisition](./reference-acquisition.md)
+for network restrictions and download provenance.
 
-При установленном Creality Print Workbench находит штатные профили K1C,
-проверяет габариты детали, запускает CLI-нарезку в отдельном неизменяемом
-каталоге и показывает G-code по слоям. Отправка на принтер возможна только после
-подтверждения в браузере, привязанного к SHA-256 G-code, профилю, принтеру и
-ревизии проекта, а также точному набору DFM-предупреждений и оценок. Любая
-последующая правка аннулирует возможность отправки.
-Для K1C 0.4 мм каталог Workbench публикует все найденные filament-профили,
-совместимые с этой машиной, для штатного процесса 0.20 mm Standard, а не только
-Generic PLA. На этом Mac живое чтение Creality Print обнаружило отдельные
-профили Creality CR-PLA и Hyper PLA; это профили слайсера, а не подтверждение
-свойств конкретной катушки или испытаний прочности.
-Для штатного K1/K1C Workbench загружает один бинарный файл через тот же
-`/upload/<filename>` endpoint, который использует установленный Creality Print,
-а затем запускает точное ASCII-имя через Moonraker. На текущем K1C этот путь
-проверен живой отправкой и состоянием `print_stats=printing`.
-Если ответ принтера потерян, `workbench_reconcile_print_submission` сверяет
-текущий `print_stats` и хранилище G-code. Он не загружает и не запускает файл:
-точно отсутствующий файл можно отправить отдельной командой, а найденный без
-подтверждённого запуска остаётся в состоянии `unknown`.
-Найденный установленный профиль можно зарегистрировать через
-`workbench_register_manufacturing_profile`, передав его `printer.id`,
-`material.id` и `slicer.id` из каталога. Workbench разрешает профиль локально и
-копирует три JSON-конфигурации в неизменяемый реестр с отдельными SHA-256; агенту
-не нужно видеть локальные пути. Пользовательский или импортированный профиль
-можно передать полным объектом через локальный MCP. Статусы `draft`, `imported`,
-`official` и `user-verified` остаются различимы. Для DFM и нарезки используется
-возвращённый `profileHash`.
+When Creality Print is installed, Workbench finds the stock K1C profiles,
+checks the part's overall dimensions, runs CLI slicing in a separate immutable
+directory and shows the G-code layer by layer. Sending to the printer is possible only after
+a confirmation in the browser that is bound to the G-code SHA-256, profile, printer and
+project revision, and to the exact set of DFM warnings and estimates. Any
+later edit revokes the ability to send.
+For the K1C 0.4 mm, the Workbench catalog publishes all discovered filament profiles
+compatible with that machine for the stock 0.20 mm Standard process, not only
+Generic PLA. On this Mac, a live read of Creality Print found separate
+Creality CR-PLA and Hyper PLA profiles; these are slicer profiles, not confirmation
+of the properties of a specific spool or of strength tests.
+For a stock K1/K1C, Workbench uploads one binary file through the same
+`/upload/<filename>` endpoint that the installed Creality Print uses,
+and then starts the exact ASCII name through Moonraker. On the current K1C this path
+was verified by a live submission and the `print_stats=printing` state.
+If the printer's response is lost, `workbench_reconcile_print_submission` checks
+the current `print_stats` and the G-code storage. It does not upload or start the file:
+a file that is definitely absent can be sent with a separate command, while one that is found without
+a confirmed start stays in the `unknown` state.
+A discovered installed profile can be registered through
+`workbench_register_manufacturing_profile` by passing its `printer.id`,
+`material.id` and `slicer.id` from the catalog. Workbench resolves the profile locally and
+copies the three JSON configurations into an immutable registry with separate SHA-256 hashes; the agent
+does not need to see local paths. A user or imported profile
+can be passed as a full object through the local MCP. The `draft`, `imported`,
+`official` and `user-verified` statuses remain distinguishable. DFM and slicing use
+the returned `profileHash`.
 
-Creality Print 7.2 CLI принимает STL, OBJ и AMF, но отклоняет STEP. На
-Plasticity 26.1.3 + Creality Print 7.2.2.5483 для контрольного Solid 20 × 10 ×
-5 мм живой маршрут `plasticity_export_stl` → Workbench slicing вернул 25 слоёв
-и реальные границы траекторий 20 × 10 × 5 мм. Слайсерский `--datadir` и
-профили изолированы внутри задания. Экспортированный Plasticity 3MF импортируется
-для просмотра размеров, но в этой версии не даёт пригодного результата
-`--slice`; поэтому для Creality Print выбирается STL. Редактируемым источником
-остаётся `.plasticity` или STEP, а Workbench привязывает нарезку к SHA-256
-производного STL. Допуск хорды и угловой допуск записываются в результат экспорта.
+The Creality Print 7.2 CLI accepts STL, OBJ and AMF, but rejects STEP. On
+Plasticity 26.1.3 + Creality Print 7.2.2.5483, for a 20 × 10 ×
+5 mm reference Solid, the live `plasticity_export_stl` → Workbench slicing route returned 25 layers
+and real toolpath bounds of 20 × 10 × 5 mm. The slicer `--datadir` and
+profiles are isolated inside the job. A 3MF exported from Plasticity is imported
+for dimension viewing, but in this version it does not produce a usable `--slice`
+result; STL is therefore chosen for Creality Print. The editable source
+remains `.plasticity` or STEP, and Workbench binds the slicing to the SHA-256 of the
+derived STL. The chord tolerance and angle tolerance are recorded in the export result.
 
-OrcaSlicer 2.4.2 также прошёл живой Workbench MCP acceptance на K1C: из
-установленных machine/process/filament пресетов получен профиль Generic PLA,
-20 × 10 × 5 мм STL дал 25 слоёв и job остался `ready`; принтер не подключался.
-Для Orca Workbench читает модельный габарит из `EXCLUDE_OBJECT_DEFINE` metadata
-в G-code и отдельно сохраняет меньший bbox траектории экструдера. Если G-code
-даёт только приблизительные границы траектории, они не считаются доказательством,
-что сама модель помещается на столе.
+OrcaSlicer 2.4.2 also passed a live Workbench MCP acceptance on the K1C: a Generic PLA
+profile was obtained from the installed machine/process/filament presets,
+a 20 × 10 × 5 mm STL gave 25 layers and the job stayed `ready`; the printer was not connected.
+For Orca, Workbench reads the model's overall dimensions from `EXCLUDE_OBJECT_DEFINE` metadata
+in the G-code and separately stores the smaller bbox of the extruder toolpath. If the G-code
+gives only approximate toolpath bounds, they are not taken as proof
+that the model itself fits on the bed.
 
-На Apple Silicon Workbench предпочитает
-`/Applications/Creality Print (Apple Silicon).app`, если в нём найдены CLI и
-штатные профили K1C; исходное `/Applications/Creality Print.app` не заменяется.
-Для нестандартного расположения задайте `CREALITY_PRINT_EXECUTABLE` и
-`CREALITY_PRINT_RESOURCES_ROOT` (путь к `Contents/Resources`) процессу
-Workbench. Живой slicer acceptance запускается командой
+On Apple Silicon, Workbench prefers
+`/Applications/Creality Print (Apple Silicon).app` if the CLI and
+stock K1C profiles are found in it; the original `/Applications/Creality Print.app` is not replaced.
+For a non-standard location, set `CREALITY_PRINT_EXECUTABLE` and
+`CREALITY_PRINT_RESOURCES_ROOT` (the path to `Contents/Resources`) for the
+Workbench process. The live slicer acceptance is run with the command
 `npm run accept:creality-print -- --input /path/to/model.stl --output /new/evidence --executable /path/to/CrealityPrint --resources-root /path/to/Contents/Resources`;
-он не связывается с принтером и не начинает печать.
-Полный stdio MCP-конвейер — создание проекта, загрузка STL, выбор профиля,
-`workbench_slice_model`, чтение preview asset и отказ отправки до подтверждения —
-проверяется командой `npm run accept:workbench-creality-mcp` с теми же аргументами.
-Для комплектов из нескольких частей предусмотрен `workbench_slice_parts`: он
-проверяет весь пакет STL до нарезки, создаёт отдельный G-code job на каждую
-часть и сохраняет отдельное подтверждение перед отправкой каждого задания.
-Живая batch-проверка на K1C запускается тем же acceptance с `--batch-parts 2`.
-MCP также предоставляет `plasticity_export_3mf` для слайсеров, которые
-принимают 3MF. Plasticity 26.1.3 всегда объявляет координаты такого файла в
-метрах, поэтому адаптер задаёт проверенный масштаб `0.001` для исходной
-миллиметровой модели, проверяет обязательные OPC-части архива и читает реальные
-границы сетки обратно из `3D/3dmodel.model`. `.plasticity` или STEP остаётся
-редактируемым источником; 3MF, как и STL, является производной сеткой.
-Creality Print/K1C по-прежнему использует STL, поскольку его CLI не выдаёт
-пригодный G-code из Plasticity 3MF.
+it does not contact the printer and does not start printing.
+The full stdio MCP pipeline (project creation, STL upload, profile selection,
+`workbench_slice_model`, reading the preview asset and refusing submission before confirmation)
+is verified with `npm run accept:workbench-creality-mcp` with the same arguments.
+For multi-part sets there is `workbench_slice_parts`: it
+checks the whole STL batch before slicing, creates a separate G-code job for each
+part and keeps a separate confirmation before each job is sent.
+The live batch check on the K1C is run by the same acceptance with `--batch-parts 2`.
+The MCP also provides `plasticity_export_3mf` for slicers that
+accept 3MF. Plasticity 26.1.3 always declares the coordinates of such a file in
+meters, so the adapter sets a verified `0.001` scale for the source
+millimeter model, checks the required OPC parts of the archive and reads the real
+mesh bounds back from `3D/3dmodel.model`. `.plasticity` or STEP remains
+the editable source; 3MF, like STL, is a derived mesh.
+Creality Print/K1C still uses STL, because its CLI does not produce
+usable G-code from a Plasticity 3MF.
 
-`plasticity_export_obj` создаёт производную Wavefront-сетку выбранных Solid и
-Sheet через нативный `OBJExportFactory`. Координаты записываются в миллиметрах
-с осью Z вверх. Адаптер перечитывает сохранённый файл, проверяет индексы граней,
-конечность координат и возвращает число объектов, вершин, нормалей, UV, граней,
-треугольников и фактические bounds. Файл не перезаписывается, а экспорт не
-меняет документ или историю Plasticity. Повторяемая живая проверка:
+`plasticity_export_obj` creates a derived Wavefront mesh of the selected Solids and
+Sheets through the native `OBJExportFactory`. Coordinates are written in millimeters
+with the Z axis up. The adapter rereads the saved file, checks face indices and
+that coordinates are finite, and returns the number of objects, vertices, normals, UVs, faces,
+triangles and the actual bounds. The file is not overwritten, and the export does not
+change the document or the Plasticity history. Repeatable live check:
 
 ```sh
 npm run accept:native-obj-export -- \
@@ -2338,59 +2338,59 @@ npm run accept:native-obj-export -- \
   --output /tmp/plasticity-mcp-output
 ```
 
-Если габарит не помещается на стол, `workbench_assess_printability` сначала
-проверяет шесть осевых ориентаций и диагональную раскладку с шагом 0,1°.
-Для большой детали он возвращает расчётную сетку частей, смещения разрезов и
-варианты соединений. Сам расчётный план CAD не изменяет. После выбора
-ориентации и выравнивания детали вдоль мировых осей принтера агент передаёт
-полезный объём профиля в `plasticity_split_solid_to_build_volume`: MCP читает
-точные B-Rep bounds, вычисляет число равных сегментов и координаты плоскостей,
-затем проверяет фактические bounds каждого результата. Для одного выбранного
-плоского разреза MCP предоставляет
-`plasticity_split_solid_by_plane`, а `plasticity_split_solid_by_planes` принимает
-упорядоченный список плоскостей и последовательно режет только пересекаемые
-ими текущие части. Оба инструмента строят временные поверхности по точным
-B-Rep границам, требуют ровно два Solid на каждый нативный разрез, проверяют
-сохранение точного общего объёма и удаляют временные резаки. Агент пока сам
-выбирает и применяет ориентацию детали по DFM `splitPlan`; MCP пока не
-оптимизирует швы под прочность, поддержки или сборку.
-Соединение создаётся отдельной операцией и требует согласованного типа и
-проверенного зазора. Получившиеся части нужно повторно проверить относительно
-стола. Перед созданием задания Workbench независимо проверяет реальные границы
-траекторий из G-code относительно объёма выбранного принтера.
-После ориентации агент может повторно вызвать `workbench_assess_printability`
-с `split.protectedZones`, указав источник, ось и точный интервал зоны в
-ориентированных координатах. DFM помечает пересечение предложенных швов с
-этими областями и проверяет полный явный набор альтернативных
-`split.cutOffsetsMm` на размер каждого сегмента. Ссылки на расчёт и сами зоны
-передаёт вызывающий агент; Workbench не проверяет актуальность расчёта и не
-выводит структурную безопасность. Для применения смещённых плоскостей агент
-передаёт их из ответа в `plasticity_split_solid_by_planes`; автоматическая
-оптимизация расположения швов по прочности или поддержкам пока не выполняется.
+If the overall dimensions do not fit on the bed, `workbench_assess_printability` first
+checks six axis-aligned orientations and a diagonal placement in 0.1° steps.
+For a large part it returns a computed grid of parts, cut offsets and
+joint options. The computed plan itself does not change the CAD. After choosing the
+orientation and aligning the part with the printer's world axes, the agent passes
+the profile's usable volume to `plasticity_split_solid_to_build_volume`: the MCP reads
+exact B-Rep bounds, computes the number of equal segments and the plane coordinates,
+then checks the actual bounds of each result. For one chosen
+planar cut, the MCP provides
+`plasticity_split_solid_by_plane`, and `plasticity_split_solid_by_planes` accepts
+an ordered list of planes and sequentially cuts only the current parts that
+those planes intersect. Both tools build temporary surfaces from exact
+B-Rep bounds, require exactly two Solids for each native cut, check that
+the exact total volume is preserved and delete the temporary cutters. For now the agent itself
+chooses and applies the part orientation from the DFM `splitPlan`; the MCP does not yet
+optimize seams for strength, supports or assembly.
+A joint is created by a separate operation and requires an agreed type and
+a verified clearance. The resulting parts must be checked again against the
+bed. Before creating a job, Workbench independently checks the real toolpath
+bounds from the G-code against the volume of the selected printer.
+After orientation, the agent can call `workbench_assess_printability` again
+with `split.protectedZones`, giving the source, axis and exact interval of the zone in
+oriented coordinates. DFM flags where the proposed seams intersect
+these regions and checks a complete explicit set of alternative
+`split.cutOffsetsMm` against the size of each segment. References to the calculation and the zones themselves
+are passed by the calling agent; Workbench does not check whether the calculation is current and does not
+infer structural safety. To apply the offset planes, the agent
+passes them from the response to `plasticity_split_solid_by_planes`; automatic
+optimization of seam placement for strength or supports is not yet performed.
 
-Нативный сценарий можно повторить на явно выбранном пустом окне Plasticity:
+The native scenario can be repeated on an explicitly selected empty Plasticity window:
 
 ```sh
 npm run accept:native-solid-split -- --target TARGET_ID --allow-disposable-mutations --output /tmp/plasticity-mcp-output
 ```
 
-Проверка создаёт временный куб 20 × 20 × 20 мм, делит его пополам и строит
-шип-паз с тестовым зазором 0,25 мм. Затем она делит куб 40 × 20 × 20 мм двумя
-плоскостями на четыре части. Оба сценария сверяют точные B-Rep bounds и объём,
-проверяют нативную валидность частей, для шип-паза также проверяют отсутствие
-объёмной коллизии, выполняют Undo/Redo и возвращают документ к исходному
-пустому состоянию. Тестовый зазор подтверждает CAD-геометрию, но не заменяет
-калибровку печати. Та же проверка отдельно моделирует пару «винт + термовставка»
-по публичному MCP-рецепту и проверяет резьбу M5×0,8, измеренное зацепление,
-валидность Solid, отсутствие пересечения и Undo/Redo. Размеры термовставки в
-этом fixture синтетические и не подтверждают установку конкретного изделия.
-Проверка откажется работать с непустым документом или уже существующим
-каталогом evidence.
+The check creates a temporary 20 × 20 × 20 mm cube, splits it in half and builds
+a tongue-and-groove joint with a 0.25 mm test clearance. It then splits a 40 × 20 × 20 mm cube with two
+planes into four parts. Both scenarios compare exact B-Rep bounds and volume,
+check the native validity of the parts, for the tongue-and-groove joint also check that there is no
+volumetric collision, run Undo/Redo and return the document to its original
+empty state. The test clearance confirms the CAD geometry but does not replace
+print calibration. The same check separately models a "screw + heat-set insert" pair
+from the public MCP recipe and checks the M5×0.8 thread, the measured engagement,
+Solid validity, absence of interference and Undo/Redo. The heat-set insert dimensions in
+this fixture are synthetic and do not confirm installation of a specific product.
+The check refuses to run on a non-empty document or an already existing
+evidence directory.
 
-Сквозной маршрут двух частей с этим соединением и Creality Print/K1C проверяется
-командой `npm run accept:workbench-creality-mcp -- --plasticity-target TARGET_ID
+The end-to-end route of two parts with this joint and Creality Print/K1C is verified
+with `npm run accept:workbench-creality-mcp -- --plasticity-target TARGET_ID
 --split-native --split-joint screws-and-inserts --output NEW_DIRECTORY --executable
 "/Applications/Creality Print (Apple Silicon).app/Contents/MacOS/CrealityPrint"
 --resources-root "/Applications/Creality Print (Apple Silicon).app/Contents/Resources"`.
-Это малый синтетический шовный fixture, не рекомендация для реального изделия;
-оба задания остаются `ready`, а отправка без подтверждения блокируется.
+This is a small synthetic seam fixture, not a recommendation for a real product;
+both jobs stay `ready`, and submission without confirmation is blocked.

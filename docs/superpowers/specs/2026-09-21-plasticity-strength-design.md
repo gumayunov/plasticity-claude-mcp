@@ -1,277 +1,283 @@
-# Plasticity MCP: расчёт прочности перед подбором геометрии
+# Plasticity MCP: strength calculation before choosing geometry
 
-Дата: 2026-09-21.
-Статус: согласована пользователем 2026-09-21; реализация не начата.
+Date: 2026-09-21.
+Status: approved by the user on 2026-09-21; implementation has not started.
 
-## 1. Цель и согласованные границы
+## 1. Goal and agreed scope
 
-Помочь пользователю проектировать технические детали в Plasticity, начиная с
-назначения, нагрузок, материала и допустимого прогиба. Толщины и сечения
-подбираются по расчётным условиям, затем проверяются на фактически построенной
-геометрии. Минимальная печатаемая стенка не заменяет расчёт прочности.
+Help the user design technical parts in Plasticity, starting from the part's
+purpose, loads, material and allowable deflection. Thicknesses and sections
+are chosen from design conditions and then checked on the geometry that was
+actually built. A minimum printable wall does not replace a strength
+calculation.
 
-Основной интерфейс — чат Codex. Пользователь наблюдает модель в Plasticity.
-Workbench опционален: его отсутствие не блокирует вопросы, расчёт, согласование,
-построение или получение отчёта. Подтверждение физической печати остаётся
-отдельным существующим процессом и не входит в эту спецификацию.
+The main interface is the Codex chat. The user watches the model in Plasticity.
+Workbench is optional: without it, questions, calculation, approval,
+construction and the report still work. Confirmation of physical printing
+remains a separate existing process and is outside this specification.
 
-Plasticity остаётся единственным CAD и источником фактической геометрии.
-MCP предоставляет нативные операции, расчётные инструменты и инструкции агенту.
-Он не создаёт собственное дерево построения, геометрическое ядро или редактор.
+Plasticity remains the only CAD and the source of actual geometry. The MCP
+provides native operations, calculation tools and agent instructions. It does
+not create its own construction tree, geometry kernel or editor.
 
-Пользователь согласовал:
+The user agreed to:
 
-- входные задания по эскизам и фото, в том числе без масштаба;
-- возможность предварительной модели с явно неопределёнными размерами;
-- поиск доступных характеристик до вопросов пользователю;
-- адаптивное интервью понятными бытовыми вопросами;
-- согласование каждого логического изменения, а не каждой внутренней команды;
-- делегирование «давай сам» только на порученное действие;
-- вызовы Codex API из MCP для ограниченных задач анализа;
-- первоочередной расчёт статической прочности и прогиба;
-- выбор пластика и условий печати под нагрузку, если материал ещё не выбран.
+- input tasks from sketches and photos, including unscaled ones;
+- a provisional model with explicitly undetermined dimensions;
+- searching for available specifications before asking the user;
+- an adaptive interview with plain everyday questions;
+- approval of each logical change, not of each internal command;
+- delegation through "давай сам" ("go ahead yourself") only for the assigned action;
+- Codex API calls from the MCP for bounded analysis tasks;
+- static strength and deflection calculation as the first priority;
+- choosing a plastic and print settings for the load if the material is not yet chosen.
 
-## 2. Декомпозиция развития
+## 2. Development breakdown
 
-Этот документ описывает первый самостоятельный этап — статический расчёт и
-подбор размеров. Следующие этапы получают отдельные спецификации:
+This document describes the first standalone stage: static calculation and
+sizing. Later stages get separate specifications:
 
-1. Полный процесс восстановления детали по фото/эскизу без масштаба.
-2. Доработка существующей детали по назначению с учётом ручных изменений.
-3. Дополнительные нативные операции поверхностей и сложной геометрии.
-4. Расширенные расчёты: численный решатель, соединения, удары, усталость,
-   длительная деформация и другие неподдерживаемые первым этапом случаи.
+1. A complete process for reconstructing a part from an unscaled photo or sketch.
+2. Reworking an existing part for its purpose, taking manual edits into account.
+3. Additional native operations for surfaces and complex geometry.
+4. Extended calculations: a numerical solver, joints, impacts, fatigue,
+   long-term deformation and other cases the first stage does not support.
 
-Первый этап принимает текст, изображения и ответы как контекст расчётной задачи.
-Наличие изображения не означает, что восстановление произвольной детали уже
-реализовано или что её размеры известны.
+The first stage accepts text, images and answers as context for the calculation
+task. An image being present does not mean that reconstruction of an arbitrary
+part is already implemented or that its dimensions are known.
 
-## 3. Проверенная основа проекта
+## 3. Verified project basis
 
-- `src/server.ts` регистрирует stdio MCP, операции, журнал и сценарий работы по
-  референсу; `src/plasticity/` реализует нативные команды и чтение геометрии.
-- `src/plasticity/semantic.ts` ищет грани и рёбра по характеристикам. Это механизм
-  выбора геометрии, а не система распознавания расчётных схем.
-- `workbench/src/server/codex/client.ts` содержит клиент JSON-RPC с initialize,
-  thread/start и turn/start; локальный контракт принимает текст и localImage.
-- Установленный `codex app-server --help` подтверждает stdio и генерацию схем
-  протокола. Живой вызов анализа изображения этим адаптером в данном этапе
-  ещё не проверялся. Существующие mock-тесты не доказывают такую совместимость.
-- Нативная валидность B-Rep и пригодность замкнутого тела к экспорту не являются
-  результатами расчёта механической прочности.
+- `src/server.ts` registers the stdio MCP, operations, the journal and the
+  reference workflow; `src/plasticity/` implements native commands and geometry reading.
+- `src/plasticity/semantic.ts` finds faces and edges by their characteristics. It
+  is a geometry selection mechanism, not a system for recognising calculation models.
+- `workbench/src/server/codex/client.ts` contains a JSON-RPC client with initialize,
+  thread/start and turn/start; the local contract accepts text and localImage.
+- The installed `codex app-server --help` confirms stdio and protocol schema
+  generation. A live image-analysis call through this adapter has not yet been
+  tested in this stage. The existing mock tests do not prove that compatibility.
+- Native B-Rep validity and a closed body's suitability for export are not
+  results of a mechanical strength calculation.
 
-## 4. Роли и поток работы
+## 4. Roles and workflow
 
-Основной агент получает поручение и поддерживает диалог. MCP вызывает Codex
-App Server API для ограниченного анализа переданного контекста: извлечения
-данных, предложения расчётной схемы, выявления пробелов и следующих вопросов.
+The main agent receives the assignment and keeps the dialogue going. The MCP
+calls the Codex App Server API for bounded analysis of the supplied context:
+extracting data, proposing a calculation model, finding gaps and next questions.
 
-Числа напряжений, прогиба и подбираемых размеров вычисляет детерминированный
-расчётный модуль с версионированными методами. Ответ модели не подменяет его.
+Stresses, deflection and chosen dimensions are computed by a deterministic
+calculation module with versioned methods. A model response does not replace it.
 
-Поток:
+Workflow:
 
-1. Собрать предмет, способ крепления, положение нагрузки и условия эксплуатации.
-2. Найти доступные первичные характеристики предмета/материала через инструменты
-   основного агента и передать в анализ значения вместе с источниками.
-3. Задать только оставшиеся вопросы. Например: «что будет стоять на держателе»
-   вместо повторного требования указать неизвестное пользователю усилие.
-4. Зафиксировать расчётную схему, исходные данные, неизвестные и критерии.
-5. Рассчитать предварительные размеры или диапазон кандидатов.
-6. Показать логический пакет изменения в чате и получить согласие либо проверить
-   действующее делегирование на конкретное поручение.
-7. Построить через существующие нативные инструменты Plasticity MCP.
-8. Прочитать фактическую геометрию, проверить применимость схемы, пересчитать.
-9. Проверить посадки и изготовление. Любое последующее изменение геометрии,
-   материала или ориентации требует повторной проверки расчётных выводов.
+1. Collect the object, the mounting method, the load position and the service conditions.
+2. Find available primary specifications of the object or material with the main
+   agent's tools and pass the values together with their sources to the analysis.
+3. Ask only the remaining questions. For example: "what will stand on the holder"
+   instead of asking again for a force the user does not know.
+4. Record the calculation model, input data, unknowns and criteria.
+5. Calculate provisional dimensions or a range of candidates.
+6. Show the logical change package in the chat and get approval, or check that
+   the current delegation covers the specific assignment.
+7. Build through the existing native Plasticity MCP tools.
+8. Read the actual geometry, check that the model applies, and recalculate.
+9. Check fits and manufacturability. Any later change of geometry, material or
+   orientation requires the calculation conclusions to be checked again.
 
-Готовый отчёт может быть показан в чате без запуска Workbench.
+The finished report can be shown in the chat without starting Workbench.
 
-## 5. Начальный каталог методов — предложение для первого выпуска
+## 5. Initial method catalogue: proposal for the first release
 
-Чтобы первый этап имел конечные проверяемые границы, предлагаются две схемы:
+To give the first stage finite, verifiable bounds, two models are proposed:
 
-- прямой элемент постоянного прямоугольного сечения при осевом растяжении;
-- прямая консоль постоянного прямоугольного сечения с идеализированным
-  закреплением и одной поперечной статической силой на свободном конце.
+- a straight member with a constant rectangular section under axial tension;
+- a straight cantilever with a constant rectangular section, an idealised
+  fixed support and one transverse static force at the free end.
 
-Это расчётные идеализации выбранного элемента. Проверка консоли не подтверждает
-прочность стены, винтов, контакта с основанием или всего кронштейна.
+These are calculation idealisations of the selected member. A cantilever check
+does not confirm the strength of the wall, the screws, the contact with the base
+or the whole bracket.
 
-Каждый метод обязан иметь: источник формул, единицы, систему координат,
-разрешённую геометрию, список предпосылок, критерии применимости и независимые
-численные примеры. Точные формулы и количественные границы применимости
-проверяются по первичным инженерным источникам до реализации метода. Метод
-без такого паспорта не включается в доступный каталог.
+Each method must have: a source for its formulas, units, a coordinate system,
+allowed geometry, a list of assumptions, applicability criteria and independent
+numerical examples. Exact formulas and quantitative applicability limits are
+checked against primary engineering sources before the method is implemented. A
+method without such a passport is not included in the available catalogue.
 
-Рёбра, отверстия, переменное сечение, составные нагрузки и иные выходы за
-паспорт метода не сводятся автоматически к габаритному параллелепипеду.
-Инструмент возвращает неподдерживаемый случай и причину. Расчёт упрощённой
-схемы возможен только как явно обозначенная оценка с непроверенными условиями.
+Ribs, holes, a varying section, combined loads and other departures from the
+method passport are not automatically reduced to the bounding box. The tool
+returns an unsupported case and the reason. A calculation of a simplified model
+is possible only as an explicitly labelled estimate with unverified conditions.
 
-Первый выпуск не включает FEM, расчёт крепежа, потерю устойчивости, удар,
-усталость, ползучесть и термомеханический анализ. При обнаружении таких условий
-отчёт не может заявить пригодность детали для полного сценария эксплуатации.
+The first release does not include FEM, fastener calculation, buckling, impact,
+fatigue, creep or thermomechanical analysis. When such conditions are detected,
+the report cannot claim the part is fit for the full service scenario.
 
-## 6. Входные данные и материал
+## 6. Input data and material
 
-Каждое значение хранит единицу, источник, статус и применимость. Статусы:
-измерено, найдено в источнике, выведено, принято как допущение, неизвестно.
-Выведенное значение содержит ссылки на исходные данные и способ получения.
-Уверенность модели не является вероятностью безотказности конструкции.
+Each value stores a unit, a source, a status and applicability. Statuses:
+measured, found in a source, derived, accepted as an assumption, unknown.
+A derived value contains references to its input data and how it was obtained.
+Model confidence is not a probability that the structure will not fail.
 
-Публичные единицы: миллиметры, ньютоны, килограммы для массы, мегапаскали,
-градусы и градусы Цельсия. Масса не принимается за силу без явного преобразования.
-Внутренняя система единиц расчётного модуля едина и документируется в паспортах.
+Public units: millimetres, newtons, kilograms for mass, megapascals,
+degrees and degrees Celsius. Mass is not taken as force without an explicit conversion.
+The calculation module has one internal unit system, documented in the passports.
 
-Набор материала содержит конкретный продукт, источник механических свойств,
-условия их определения, температурные ограничения и соответствие условиям
-печати. Он связывается с профилем принтера, ориентацией и доступными параметрами
-изготовления. Для работы без Workbench набор передаётся и сохраняется MCP
-самостоятельно; необязательный адаптер может прочитать существующий профиль.
+A material set contains a specific product, the source of its mechanical
+properties, the conditions they were determined under, temperature limits and
+their match to the print conditions. It is linked to the printer profile, the
+orientation and the available manufacturing settings. To work without
+Workbench, the MCP receives and stores the set itself; an optional adapter can
+read an existing profile.
 
-Название «PLA» или настройка температуры сопла сами по себе не дают допускаемых
-напряжений. Свойства другого образца/процесса не помечаются как подтверждённые
-для текущей детали. Неизвестные свойства ведут к запросу данных, условному
-диапазону или предложению испытания образца.
+The name "PLA" or a nozzle temperature setting does not by itself give allowable
+stresses. Properties of another specimen or process are not marked as confirmed
+for the current part. Unknown properties lead to a data request, a conditional
+range or a proposal to test a specimen.
 
-Допустимый прогиб и правило выбора запаса задаются явно и объясняются
-пользователю. Универсальный скрытый коэффициент запаса не используется.
-Для диапазона входов инструмент показывает, как получены границы результата;
-обычный перебор нескольких точек не называется доказанной худшей оценкой.
+Allowable deflection and the safety-margin rule are set explicitly and explained
+to the user. No universal hidden safety factor is used. For an input range, the
+tool shows how the result bounds were obtained; simply evaluating several points
+is not called a proven worst-case estimate.
 
-## 7. Контракты результатов и привязка к CAD
+## 7. Result contracts and CAD binding
 
-Расчётная задача содержит цель, условия нагружения и закрепления, материал,
-критерии, идентификатор метода и связанные элементы Plasticity, если они есть.
-До построения размеры имеют источник «кандидат», а не «измеренная геометрия».
+A calculation task contains the goal, loading and support conditions, the
+material, criteria, the method ID and the linked Plasticity elements, if any.
+Before construction, dimensions have the source "candidate", not "measured geometry".
 
-Результат содержит версию метода, хеш входов, расчётные величины, определяющий
-критерий, проверенные предпосылки, непроверенные компоненты и один из статусов:
+A result contains the method version, an input hash, calculated quantities, the
+governing criterion, verified assumptions, unverified components and one of the statuses:
 
-- `needs-input`: отсутствуют необходимые данные;
-- `unsupported`: случай вне реализованного метода;
-- `conditional`: оценка зависит от неподтверждённых предпосылок;
-- `pass`: все проверяемые критерии выполнены в явно указанной области расчёта;
-- `fail`: хотя бы один проверяемый критерий не выполнен.
+- `needs-input`: required data is missing;
+- `unsupported`: the case is outside the implemented method;
+- `conditional`: the estimate depends on unconfirmed assumptions;
+- `pass`: all checked criteria are met within the explicitly stated calculation scope;
+- `fail`: at least one checked criterion is not met.
 
-Связанный с CAD результат дополнительно хранит сессию, документ, ревизию,
-выбранные тела и источник каждого прочитанного размера. Изменение документа,
-геометрии или входов делает результат `stale`; старый отчёт остаётся в истории,
-но не показывается как действующая проверка.
+A CAD-bound result also stores the session, document, revision, selected bodies
+and the source of each dimension read. A change of the document, geometry or
+inputs makes the result `stale`; the old report stays in the history but is not
+shown as a current check.
 
-Нативный bbox не доказывает постоянство сечения и отсутствие отверстий.
-Для проверяемой привязки начальных методов нужен отдельный ограниченный анализ
-точной геометрии; при невозможности доказать соответствие метод не получает
-статус `pass` на текущем теле. Mesh-bbox допустим только для ориентирования.
+A native bbox does not prove a constant section or the absence of holes. A
+verifiable binding for the initial methods needs a separate bounded analysis of
+the exact geometry; when the match cannot be proven, the method does not get the
+`pass` status on the current body. A mesh bbox is acceptable only for orientation.
 
-Undo/Redo Plasticity не откатывает автоматически внешние исходные данные.
-После любого такого изменения MCP перечитывает состояние и заново определяет
-актуальность отчёта. Журнал не становится вторым CAD.
+Plasticity Undo/Redo does not automatically roll back external input data. After
+any such change, the MCP rereads the state and determines again whether the
+report is current. The journal does not become a second CAD.
 
-## 8. Codex API и инструкции
+## 8. Codex API and instructions
 
-Используется локальный Codex App Server через stdio с настроенной пользователем
-авторизацией. Сетевой endpoint собственной разработки не требуется.
-Общий транспорт выделяется из Workbench только в объёме, нужном обоим клиентам.
+The local Codex App Server is used over stdio with authorisation configured by
+the user. No custom network endpoint is required. A shared transport is
+extracted from Workbench only to the extent both clients need it.
 
-Перед разработкой проверяются схемы установленной версии Codex и живой вызов:
-текст, локальное изображение, получение конечного ответа и его валидация.
-Статус turn/completed сам по себе не означает успешного анализа. Ошибка,
-прерывание и неверная структура ответа различаются явно.
+Before development, the schemas of the installed Codex version and a live call
+are checked: text, a local image, receiving the final response and validating it.
+The turn/completed status by itself does not mean the analysis succeeded. An
+error, an interruption and an invalid response structure are distinguished explicitly.
 
-Аналитический вызов не получает инструментов изменения Plasticity, печати или
-повторного вызова самого себя. Ограничение обеспечивается конфигурацией
-доступных возможностей, а не одной инструкцией в prompt. Если установленный
-API не позволяет обеспечить такую изоляцию, интеграция останавливается с
-конкретным описанием препятствия.
+The analysis call gets no tools for changing Plasticity, printing or calling
+itself again. This restriction is enforced by configuring the available
+capabilities, not by a single instruction in the prompt. If the installed API
+cannot provide such isolation, the integration stops with a concrete
+description of the obstacle.
 
-Вызов получает только явно переданные изображения, текст, источники и сводку
-геометрии. Полный чат и каталог пользователя автоматически не передаются.
-Модель выбирается из доступных в текущей конфигурации; жёстко заданного имени
-модели нет. Задаются предел времени и предел числа внутренних вызовов.
-Рекурсивный запуск аналитических задач запрещён.
+The call receives only explicitly passed images, text, sources and a geometry
+summary. The full chat and the user's directory are not passed automatically.
+The model is chosen from those available in the current configuration; there is
+no hard-coded model name. A time limit and a limit on the number of internal
+calls are set. Recursive launching of analysis tasks is forbidden.
 
-Ошибка или тайм-аут возвращаются основному агенту; автоматического повторного
-платного запуска нет. При живой проверке обязательно проверяется прекращение
-дочернего задания и отсутствие оставшегося фонового вызова.
+An error or timeout is returned to the main agent; there is no automatic paid
+retry. The live check must confirm that the child job terminates and that no
+background call is left running.
 
-MCP поставляет prompts/resources: сбор условий, анализ изображения, дерево
-уточнений, выбор метода, подбор материала, чтение результата, согласование
-изменений и восстановление после ошибок. Ключевые ограничения также входят в
-описания tools, поскольку клиент может не загрузить отдельный prompt.
+The MCP ships prompts/resources: collecting conditions, image analysis, the
+clarification tree, method selection, material selection, reading the result,
+change approval and error recovery. The key restrictions are also included in
+the tool descriptions, because a client may not load a separate prompt.
 
-## 9. Согласование и делегирование
+## 9. Approval and delegation
 
-Логический пакет описывает цель, текущую ревизию документа, точные параметры,
-ожидаемые изменения и проверки. Основной агент показывает пакет в чате.
-Пользователь принимает его, отклоняет или меняет условия.
+A logical package describes the goal, the current document revision, exact
+parameters, the expected changes and the checks. The main agent shows the
+package in the chat. The user accepts it, rejects it or changes the conditions.
 
-«Давай сам» разрешает только названное поручение с его ограничениями.
-Делегирование заканчивается по выполнении, отмене или отзыву. После перезапуска
-оно не восстанавливается автоматически. Изменение задачи пользователем требует
-пересмотра границ поручения. Ручная правка CAD требует сверки актуального
-состояния до продолжения; старые параметры не применяются вслепую.
+"Давай сам" ("go ahead yourself") authorises only the named assignment with its
+limits. Delegation ends on completion, cancellation or revocation. It is not
+restored automatically after a restart. A change of the task by the user
+requires the assignment's limits to be reviewed. A manual CAD edit requires the
+current state to be reconciled before continuing; old parameters are not applied blindly.
 
-В первом расчётном этапе это политика основного агента, предоставляемая
-инструкциями MCP. Сервер не может доказать согласие человека по переданному
-агентом `approved=true`; такую запись нельзя выдавать за независимую защиту.
-Новые инструменты анализа и расчёта сами не изменяют CAD. Сквозной серверный
-механизм разрешений для всех существующих CAD-команд потребует отдельной
-спецификации совместимости, если он понадобится.
+In the first calculation stage this is a policy of the main agent, provided
+through MCP instructions. The server cannot prove human approval from an
+`approved=true` passed by the agent; such a record must not be presented as
+independent protection. The new analysis and calculation tools do not change CAD
+themselves. A server-side permission mechanism covering all existing CAD commands
+would need a separate compatibility specification, if it is ever needed.
 
-Пакет может состоять из нескольких нативных шагов истории. Он не обещает одну
-атомарную транзакцию или одно Undo. При сбое сохраняются подтверждённые шаги;
-при неопределённом исходе действует существующая сверка без повтора и отката.
+A package can consist of several native history steps. It does not promise one
+atomic transaction or a single Undo. On failure, confirmed steps are kept; when
+the outcome is uncertain, the existing reconciliation applies, without retry or rollback.
 
-## 10. Хранение и модульные границы
+## 10. Storage and module boundaries
 
-MCP хранит отдельные версионированные записи условий, источников и расчётов
-в своём локальном рабочем каталоге. Workbench и его SQLite не требуются.
-Записи не хранят авторизацию Codex и не выполняются как код. Перезапуск позволяет
-прочитать старый отчёт, но не делает старую CAD-привязку действующей.
+The MCP stores separate versioned records of conditions, sources and
+calculations in its local working directory. Workbench and its SQLite are not
+required. Records do not store Codex authorisation and are not executed as code.
+After a restart an old report can be read, but its old CAD binding does not
+become current.
 
-Разделение ответственности:
+Separation of responsibilities:
 
-- адаптер Codex: жизненный цикл вызова и валидация ответа;
-- контракты задачи: входы, источники, единицы и неизвестные;
-- каталог методов: применимость и воспроизводимое вычисление;
-- адаптер геометрии: точные размеры и привязка к ревизии;
-- хранилище отчётов: воспроизводимость и актуальность;
-- MCP-регистрация и инструкции: публичное использование.
+- Codex adapter: call lifecycle and response validation;
+- task contracts: inputs, sources, units and unknowns;
+- method catalogue: applicability and reproducible computation;
+- geometry adapter: exact dimensions and revision binding;
+- report store: reproducibility and currency;
+- MCP registration and instructions: public use.
 
-Численные формулы и обработка изображений не добавляются в уже крупные
-`operations.ts` или `recipes.ts`. Изменения их структуры допускаются только
-для конкретно требуемой интеграции.
+Numerical formulas and image processing are not added to the already large
+`operations.ts` or `recipes.ts`. Changes to their structure are allowed only
+for a specifically required integration.
 
-## 11. Приёмка
+## 11. Acceptance
 
-1. Паспорта двух методов проверены по первичным источникам; численные тесты
-   используют независимые эталоны, а не копию формулы реализации.
-2. Проверены единицы, оси, знаки, неверные входы, диапазоны и неприменимость.
-3. Отсутствующие свойства материала/условия не дают безусловного `pass`.
-4. Реальный MCP-клиент вызывает анализ через Codex API, получает структурированный
-   ответ и отчёт. Проверены неверный ответ, отказ, прерывание и тайм-аут.
-5. Фото без масштаба не порождает «точных» размеров. Вопросы продолжают известные
-   ответы; найденный ранее факт не запрашивается заново без причины.
-6. В выделенном документе Plasticity после согласования строится простой
-   прямоугольный элемент. Размер подбирается расчётом и читается обратно из
-   B-Rep с контрольным допуском 0,01 мм; расчёт повторяется по этому результату.
-7. Ручное изменение сечения, Undo/Redo и смена документа делают прежний вывод
-   неактуальным до повторной проверки. Геометрически неподходящая деталь
-   отклоняется даже при совпадающем bbox.
-8. Весь сценарий проходит без Workbench; подтверждения остаются в чате.
-9. Отчёт показывает, что именно проверено. Идеализированное закрепление и
-   непроверенные соединения не превращаются в подтверждение всего изделия.
-10. Существующие тесты и операции Plasticity MCP/Workbench не регрессируют.
+1. The passports of both methods are checked against primary sources; numerical
+   tests use independent reference values, not a copy of the implementation formula.
+2. Units, axes, signs, invalid inputs, ranges and non-applicability are tested.
+3. Missing material properties or conditions do not produce an unconditional `pass`.
+4. A real MCP client calls the analysis through the Codex API and gets a structured
+   response and a report. Invalid response, refusal, interruption and timeout are tested.
+5. An unscaled photo does not produce "exact" dimensions. Questions build on known
+   answers; a fact found earlier is not requested again without reason.
+6. In a dedicated Plasticity document, after approval, a simple rectangular
+   member is built. Its size is chosen by calculation and read back from the
+   B-Rep with a control tolerance of 0.01 mm; the calculation is repeated on that result.
+7. A manual section change, Undo/Redo and a document switch make the previous
+   conclusion out of date until it is checked again. A geometrically unsuitable
+   part is rejected even when its bbox matches.
+8. The whole scenario runs without Workbench; confirmations stay in the chat.
+9. The report shows exactly what was checked. An idealised support and
+   unverified joints do not turn into a confirmation of the whole product.
+10. Existing Plasticity MCP/Workbench tests and operations do not regress.
 
-Автоматические и живые проверки подтверждают реализацию расчётного метода и
-интеграцию. Физические свойства конкретной печати и реальная несущая способность
-детали не считаются экспериментально подтверждёнными без отдельного испытания.
+Automated and live checks confirm the implementation of the calculation method
+and the integration. The physical properties of a specific print and the real
+load capacity of the part are not considered experimentally confirmed without a
+separate test.
 
-## 12. Следующий шаг
+## 12. Next step
 
-После проверки пользователем этой спецификации составляется план реализации.
-Первыми пунктами плана будут проверка возможностей Codex API и подготовка
-паспортов расчётных методов. Одобрение этой спецификации не означает одобрение
-ещё не написанного плана или начало изменения продуктового кода.
+After the user reviews this specification, an implementation plan is written.
+The first items of the plan will be checking the Codex API capabilities and
+preparing the calculation method passports. Approval of this specification does
+not mean approval of the not-yet-written plan or the start of changes to the
+product code.
