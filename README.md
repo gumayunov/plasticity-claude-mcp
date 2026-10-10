@@ -96,6 +96,27 @@ npm --prefix workbench run build
 
 Live acceptance checks use a real Plasticity session and can mutate a document. Read the corresponding acceptance guide and explicitly select a disposable test document before running them; they are not part of the default test suite.
 
+### Live regression harness
+
+The harness starts a separate Plasticity instance with a temporary profile and runs checks through the real MCP server. It does not touch your Plasticity window or its document; if the main Plasticity process disappears during a run, the harness prints a warning.
+
+```sh
+npm run test:live                       # quick tier: 20 key checks, a few seconds
+npm run test:live:full                  # every scripts/verify-*-live.ts, slow
+npm run test:live -- --only box-primitive,fillet-chamfer
+npm run test:live -- --update-baseline  # accept the current run as the baseline
+```
+
+Results go to `live-runs/<time>-<tier>/`: `report.md` (a table and the changes since the last baseline), `report.json`, `checks/<check>/` (files and logs) and `instance.log`. The baseline is `live-runs/baseline-<tier>.json`; it is only updated by hand and only from a run without failures.
+
+Exit codes: `0` — everything passed with no regressions; `1` — failures, regressions or an interrupted run; `2` — the harness could not start.
+
+What to know about Plasticity:
+
+- a new instance opens the start-up or last unsaved document from the shared `~/.plasticity` settings; the harness clears it only in its own temporary instance;
+- checks run in a scratch directory, and their files are then copied into `live-runs/`;
+- the temporary instance is terminated immediately (SIGKILL): otherwise Plasticity stays up with a "save before closing?" dialog, and such a hung instance breaks STEP export in the next one.
+
 ## Safety and scope
 
 - Mutations are serialized and checked against the current document revision; stale references are rejected.
