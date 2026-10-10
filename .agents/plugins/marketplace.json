@@ -8,7 +8,7 @@
       "name": "plasticity-mcp",
       "source": {
         "source": "local",
-        "path": "./plugins/plasticity-mcp"
+        "path": "./plugins/plasticity-codex"
       },
       "policy": {
         "installation": "AVAILABLE",

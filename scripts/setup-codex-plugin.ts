@@ -8,7 +8,7 @@ const home = join(homedir(), ".plasticity-mcp");
 const marketplace = "plasticity";
 const marketplaceSource = "https://github.com/Mesteriis/plasticity-mcp.git";
 const pluginId = `plasticity-mcp@${marketplace}`;
-const pluginRoot = join(root, "plugins", "plasticity-mcp");
+const pluginRoot = join(root, "plugins", "plasticity-codex");
 
 if (Number(process.versions.node.split(".")[0]) < 24) throw new Error("Node.js 24 or newer is required");
 await mkdir(home, { recursive: true, mode: 0o700 });
