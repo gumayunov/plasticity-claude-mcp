@@ -8,7 +8,7 @@ import { sanitizeEvidence } from "./harness.ts";
 import { defaultInstanceDeps, foreignMainPids, startIsolatedInstance } from "./instance.ts";
 import { projectRoot, startMcp } from "./mcp.ts";
 import { diffAgainstBaseline, formatResultLine, formatSummary, readBaseline, writeBaseline, writeRunReports } from "./report.ts";
-import { connectWithRetry, createResetter, prepareTemplate } from "./reset.ts";
+import { clearStartupDocument, connectWithRetry, createResetter } from "./reset.ts";
 import { exitCodeFor, runChecks, type PlannedCheck } from "./runner.ts";
 import { LiveSessionManager, type LiveSession } from "./session.ts";
 import { smokeChecks } from "./smoke/index.ts";
@@ -89,10 +89,9 @@ async function main(): Promise<number> {
   const onSigint = () => { void sessions.close().finally(() => process.exit(130)); };
   process.once("SIGINT", onSigint);
   try {
-    let templatePath: string;
     try {
       const opened = await sessions.open();
-      templatePath = await prepareTemplate(opened.mcp, runDir);
+      await clearStartupDocument(opened.mcp);
     } catch (error) {
       console.error(`Live harness could not start: ${error instanceof Error ? error.message : String(error)}`);
       return 2;
@@ -101,7 +100,7 @@ async function main(): Promise<number> {
       if (!sessions.current) throw new Error("Live session is closed");
       return sessions.current;
     };
-    const resetDocument = createResetter(() => current().mcp, templatePath, join(runDir, "backups"));
+    const resetDocument = createResetter(() => current().mcp);
     const reset = async () => {
       try {
         await resetDocument();

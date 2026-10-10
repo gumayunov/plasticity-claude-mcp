@@ -1,5 +1,3 @@
-import { join } from "node:path";
-
 import { CheckFailure, assertEmptyDocument, snapshot } from "./harness.ts";
 import type { McpCaller } from "./types.ts";
 
@@ -31,9 +29,10 @@ export async function connectWithRetry(mcp: McpCaller, targetId: string, options
   }
 }
 
-export async function prepareTemplate(mcp: McpCaller, runDir: string): Promise<string> {
+// The isolated instance opens the startup (or last) document; plain bodies in it are safe to clear.
+// Nothing is saved: a saved harness file would become the "last document" in the shared ~/.plasticity state.
+export async function clearStartupDocument(mcp: McpCaller): Promise<void> {
   let state = await snapshot(mcp);
-  // The isolated instance opens the user's startup document; plain bodies in it are safe to clear.
   if (state.bodyTotal > 0 && state.instanceCount === 0 && state.nonRootGroupCount === 0) {
     await mcp.call("plasticity_delete", { ids: state.bodies.map((body) => body.id), intent: "Clear the isolated startup document", revision: state.revision });
     state = await snapshot(mcp);
@@ -44,23 +43,17 @@ export async function prepareTemplate(mcp: McpCaller, runDir: string): Promise<s
     const reason = error instanceof Error ? error.message : String(error);
     throw new CheckFailure(`The isolated Plasticity startup document is not empty (check ~/.plasticity/startup.plasticity): ${reason}`);
   }
-  const path = join(runDir, "empty.plasticity");
-  await mcp.call("plasticity_save_copy", { path });
-  return path;
 }
 
-export function createResetter(getMcp: () => McpCaller, templatePath: string, backupDir: string): () => Promise<void> {
-  let counter = 0;
+// Resets by deleting bodies instead of opening a file: opening over unsaved changes makes Plasticity
+// show a modal "unsaved changes" dialog that blocks the renderer.
+export function createResetter(getMcp: () => McpCaller): () => Promise<void> {
   return async () => {
     const mcp = getMcp();
     const before = await snapshot(mcp);
-    counter += 1;
-    await mcp.call("plasticity_open_document", {
-      path: templatePath,
-      backupPath: join(backupDir, `before-reset-${counter}.plasticity`),
-      intent: "Live harness reset to the empty template",
-      revision: before.revision,
-    });
+    if (before.bodyTotal > 0) {
+      await mcp.call("plasticity_delete", { ids: before.bodies.map((body) => body.id), intent: "Live harness reset", revision: before.revision });
+    }
     assertEmptyDocument(await snapshot(mcp));
   };
 }
