@@ -1,4 +1,14 @@
-# Plasticity MCP
+# Plasticity MCP for Claude Code
+
+> **Unofficial fork** of [Mesteriis/plasticity-mcp](https://github.com/Mesteriis/plasticity-mcp), reworked for Claude Code. It is not affiliated with or endorsed by the upstream author. The original work is © 2026 Aleksand Meshchriakov under the [MIT License](LICENSE); the changes in this fork are released under the same license.
+>
+> What differs from upstream:
+>
+> - A Claude Code plugin (`plugins/plasticity-claude`) with a launcher and modeling skills, installed with `npm run setup:claude`.
+> - Isolated analysis and reference search run through `claude -p` by default (`PLASTICITY_ANALYSIS_PROVIDER=claude|codex|none`).
+> - Mutations answer with their change instead of the whole scene; body info and catalog schemas are paged.
+> - `plasticity_save` saves the open document over its own file; opening and backing up large documents use a long timeout; `plasticity_open_document` resets Undo history and the unsaved flag; `plasticity_delete` refuses to remove more than the requested bodies.
+> - Fixes for native memory growth on large documents and for solid and face centroids. Fixes that apply upstream are offered back as pull requests.
 
 ![Plasticity MCP local CAD workflow](docs/assets/workflow.svg)
 
@@ -30,21 +40,23 @@ See the [full tool reference](docs/tool-reference.md), [acceptance matrix](docs/
 - macOS on Apple Silicon
 - Plasticity 26.1.3 installed at `/Applications/Plasticity.app`
 - Node.js 24 or newer
-- Codex CLI for the Git-backed plugin installation below
+- Claude Code (or Codex CLI for the upstream Codex plugin)
 
 This is an early, version-specific project. Live CAD and slicer operations depend on the installed applications and are not covered by mock tests alone. Check the [acceptance matrix](docs/acceptance-matrix.md) before relying on a specific operation.
 
 ## Install and run
 
 ```sh
-git clone https://github.com/Mesteriis/plasticity-mcp.git
-cd plasticity-mcp
+git clone https://github.com/gumayunov/plasticity-claude-mcp.git
+cd plasticity-claude-mcp
 npm install
 npm run start:plasticity
-npm run setup:codex
+npm run setup:claude
 ```
 
-`setup:codex` adds this GitHub repository as a Codex plugin marketplace and installs the `plasticity-mcp` plugin from Git. It records this checkout's path in a private file under `~/.plasticity-mcp` so the two MCP servers can run the checked-out code and its installed dependencies. No machine-specific paths are committed. Open a new Codex chat after installation.
+`setup:claude` registers this checkout as a local Claude Code plugin marketplace and installs the `plasticity@plasticity` plugin with its skills. It records this checkout's path in a private file under `~/.plasticity-mcp`; the plugin's launcher starts the server from that checkout. Restart Claude Code after installation.
+
+The upstream Codex plugin is still available with `npm run setup:codex`. `setup:codex` adds this GitHub repository as a Codex plugin marketplace and installs the `plasticity-mcp` plugin from Git. It records this checkout's path in a private file under `~/.plasticity-mcp` so the two MCP servers can run the checked-out code and its installed dependencies. No machine-specific paths are committed. Open a new Codex chat after installation.
 
 To use the MCP server without the plugin, register it directly instead:
 
