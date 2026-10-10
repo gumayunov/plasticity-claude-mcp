@@ -8,7 +8,7 @@
     {
       "name": "plasticity",
       "description": "Model, measure and check parts in locally installed Plasticity CAD.",
-      "version": "0.2.1",
+      "version": "0.2.2-claude.1",
       "source": "./plugins/plasticity-claude"
     }
   ]
