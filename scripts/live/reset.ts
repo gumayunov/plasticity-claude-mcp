@@ -32,7 +32,12 @@ export async function connectWithRetry(mcp: McpCaller, targetId: string, options
 }
 
 export async function prepareTemplate(mcp: McpCaller, runDir: string): Promise<string> {
-  const state = await snapshot(mcp);
+  let state = await snapshot(mcp);
+  // The isolated instance opens the user's startup document; plain bodies in it are safe to clear.
+  if (state.bodyTotal > 0 && state.instanceCount === 0 && state.nonRootGroupCount === 0) {
+    await mcp.call("plasticity_delete", { ids: state.bodies.map((body) => body.id), intent: "Clear the isolated startup document", revision: state.revision });
+    state = await snapshot(mcp);
+  }
   try {
     assertEmptyDocument(state);
   } catch (error) {

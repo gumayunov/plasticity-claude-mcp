@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseProcessList, startIsolatedInstance, terminateProfileProcesses, type InstanceDeps } from "./instance.ts";
+import { foreignMainPids, parseProcessList, startIsolatedInstance, terminateProfileProcesses, type InstanceDeps } from "./instance.ts";
 
 const PROFILE = "/tmp/live-profile-x";
 
@@ -80,4 +80,13 @@ test("launch without renderer targets is an error", async () => {
 
 test("parseProcessList reads ps output", () => {
   assert.deepEqual(parseProcessList("  101 /App --x\n 2 b c\n\n"), [{ pid: 101, command: "/App --x" }, { pid: 2, command: "b c" }]);
+});
+
+test("foreignMainPids lists only main Plasticity processes outside live profiles", () => {
+  assert.deepEqual(foreignMainPids([
+    { pid: 1, command: "/Applications/Plasticity.app/Contents/MacOS/Plasticity --inspect-brk=127.0.0.1:9229" },
+    { pid: 2, command: "/Applications/Plasticity.app/Contents/Frameworks/Plasticity Helper (Renderer).app/Contents/MacOS/Plasticity Helper (Renderer) --type=renderer" },
+    { pid: 3, command: "/Applications/Plasticity.app/Contents/MacOS/Plasticity --inspect-brk=127.0.0.1:5000 --user-data-dir=/tmp/plasticity-live-profile-abc" },
+    { pid: 4, command: "/usr/bin/vim notes.txt" },
+  ]), [1]);
 });

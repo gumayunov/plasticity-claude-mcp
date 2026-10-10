@@ -57,6 +57,13 @@ export function parseProcessList(stdout: string): Array<{ pid: number; command: 
   });
 }
 
+// Main Plasticity processes that do not belong to a live-harness profile, i.e. the user's own windows.
+export function foreignMainPids(processes: Array<{ pid: number; command: string }>): number[] {
+  return processes
+    .filter((entry) => /Plasticity\.app\/Contents\/MacOS\/Plasticity(\s|$)/.test(entry.command) && !entry.command.includes("plasticity-live-profile-"))
+    .map((entry) => entry.pid);
+}
+
 export function defaultInstanceDeps(): InstanceDeps {
   return {
     launch: (options) => ensurePlasticityCdp(options),

@@ -30,12 +30,25 @@ test("prepareTemplate saves the empty start document", async () => {
   assert.deepEqual(mcp.calls.at(-1), { tool: "plasticity_save_copy", args: { path } });
 });
 
-test("prepareTemplate refuses a nonempty start document", async () => {
+test("prepareTemplate clears startup bodies of the isolated document before saving", async () => {
+  const body = { id: 7, type: "Solid", name: null, boundsMm: null, faceCount: 6, edgeCount: 12 };
+  let cleared = false;
   const mcp = fakeMcp({
-    plasticity_status: () => ({ ...emptyStatus(), bodies: [{ id: 1, type: "Solid", name: null, boundsMm: null, faceCount: 6, edgeCount: 12 }], bodyPagination: { total: 1 } }),
+    plasticity_status: () => cleared ? emptyStatus("r2") : { ...emptyStatus("r1"), bodies: [body], bodyPagination: { total: 1 } },
+    plasticity_delete: () => { cleared = true; return {}; },
+    plasticity_save_copy: () => ({ path: "x", bytes: 10 }),
+  });
+  await prepareTemplate(mcp, "/runs/one");
+  assert.deepEqual(mcp.calls.find((call) => call.tool === "plasticity_delete")?.args, { ids: [7], intent: "Clear the isolated startup document", revision: "r1" });
+  assert.equal(mcp.calls.at(-1)?.tool, "plasticity_save_copy");
+});
+
+test("prepareTemplate refuses a startup document with groups or instances", async () => {
+  const mcp = fakeMcp({
+    plasticity_status: () => ({ ...emptyStatus(), groups: [{ id: 0 }, { id: 3 }] }),
   });
   await assert.rejects(prepareTemplate(mcp, "/runs/one"), (error: unknown) => error instanceof CheckFailure && /startup document/.test(error.message));
-  assert.equal(mcp.calls.some((call) => call.tool === "plasticity_save_copy"), false);
+  assert.equal(mcp.calls.some((call) => call.tool === "plasticity_save_copy" || call.tool === "plasticity_delete"), false);
 });
 
 test("resetter opens the template with a fresh backup path and verifies emptiness", async () => {
