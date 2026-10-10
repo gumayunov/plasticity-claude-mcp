@@ -5,7 +5,7 @@ description: Use when building, editing, measuring or exporting a part in Plasti
 
 # Modeling in Plasticity
 
-Plasticity is driven over a loopback CDP connection. Units are millimetres and degrees.
+Plasticity is driven over a loopback CDP connection. Units are millimetres and degrees. For opening, reading or exporting an existing document or assembly, also use `plasticity-documents`.
 
 ## Session
 
