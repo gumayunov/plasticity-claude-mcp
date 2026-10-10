@@ -26,8 +26,7 @@ Plasticity is driven over a loopback CDP connection. Units are millimetres and d
 
 - `plasticity_create_cylinder`: `centerMm` is the centre of the base circle, not of the cylinder; height runs along `axis`.
 - `plasticity_create_rib` takes the extrusion direction from the profile normal, which follows the point winding. Check the bounds after the first rib; if it went the wrong way, undo and either reverse the point order or use `plasticity_extrude_profile` with a negative distance, then `plasticity_boolean` union.
-- `plasticity_measure_solid_properties` takes `ids` (an array) and `revision`. Volume, area and `volumeCentroidMm` (the kernel's centre of volume) are exact.
-- The area centroid from `plasticity_measure_face_properties` is currently the centre of the face's bounding box, not its area centroid. Area and boundary length are correct.
+- `plasticity_measure_solid_properties` takes `ids` (an array) and `revision`. Volume, area and `volumeCentroidMm` (the kernel's centre of volume) are exact; so are area, boundary length and `areaCentroidMm` from `plasticity_measure_face_properties`.
 - `plasticity_revolve_profile` fails with `PK_ERROR_impossible_spin` when a profile edge lies on the axis. For a solid of revolution draw an open polyline (`closed: false`) that starts and ends on the axis, with the whole profile on one side of it.
 - Prefer `plasticity_find_edges` / `plasticity_find_faces` with bounds or a centre to pick fillet and chamfer targets. `plasticity_body_info` pages faces, edges and vertices (`include`, `offset`, `limit`, `expectedRevision`); read only the collection you need.
 
