@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { appendFile, mkdir, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -10,6 +11,7 @@ import { projectRoot, startMcp } from "./mcp.ts";
 import { diffAgainstBaseline, formatResultLine, formatSummary, readBaseline, writeBaseline, writeRunReports } from "./report.ts";
 import { clearStartupDocument, connectWithRetry, createResetter } from "./reset.ts";
 import { exitCodeFor, runChecks, type PlannedCheck } from "./runner.ts";
+import { withScratchDirectory } from "./scratch.ts";
 import { LiveSessionManager, type LiveSession } from "./session.ts";
 import { smokeChecks } from "./smoke/index.ts";
 import type { CheckResult, RunReport, Tier } from "./types.ts";
@@ -75,6 +77,7 @@ async function main(): Promise<number> {
   const startedAt = new Date();
   const runDir = join(runsRoot, `${startedAt.toISOString().replace(/[:.]/g, "-")}-${options.tier}`);
   await mkdir(join(runDir, "checks"), { recursive: true });
+  const scratchRoot = await mkdtemp(join(tmpdir(), "plasticity-live-run-"));
   const log: Log = async (line) => { await appendFile(join(runDir, "instance.log"), `${new Date().toISOString()} ${line}\n`); };
 
   const instanceDeps = defaultInstanceDeps();
@@ -118,10 +121,9 @@ async function main(): Promise<number> {
         name: check.name,
         timeoutMs: SMOKE_TIMEOUT_MS,
         async execute() {
-          const workDir = join(runDir, "checks", check.name);
-          await mkdir(workDir, { recursive: true });
           const session = current();
-          return await check.run({ mcp: session.mcp, targetId: session.instance.targetId, cdpUrl: session.instance.cdpUrl, workDir });
+          return await withScratchDirectory(scratchRoot, check.name, join(runDir, "checks", check.name), (workDir) =>
+            check.run({ mcp: session.mcp, targetId: session.instance.targetId, cdpUrl: session.instance.cdpUrl, workDir }));
         },
       }))
       : full.map((entry) => ({
@@ -129,10 +131,9 @@ async function main(): Promise<number> {
         timeoutMs: FULL_TIMEOUT_MS,
         ...(entry.skipReason === undefined ? {} : { skipReason: entry.skipReason }),
         async execute(signal: AbortSignal) {
-          const checkDir = join(runDir, "checks", entry.name);
-          await mkdir(checkDir, { recursive: true });
           const session = current();
-          return await runFullEntry(entry, { cdpUrl: session.instance.cdpUrl, targetId: session.instance.targetId, checkDir, signal });
+          return await withScratchDirectory(scratchRoot, entry.name, join(runDir, "checks", entry.name), (checkDir) =>
+            runFullEntry(entry, { cdpUrl: session.instance.cdpUrl, targetId: session.instance.targetId, checkDir, signal }));
         },
       }));
 
@@ -168,6 +169,7 @@ async function main(): Promise<number> {
   } finally {
     process.removeListener("SIGINT", onSigint);
     await sessions.close();
+    await rm(scratchRoot, { recursive: true, force: true });
     const vanished = userPlasticity.filter((pid) => !instanceDeps.isAlive(pid));
     if (vanished.length > 0) {
       const warning = `WARNING: user Plasticity process(es) ${vanished.join(", ")} are no longer running after the live run`;

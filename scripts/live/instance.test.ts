@@ -54,16 +54,17 @@ test("stop terminates only processes of this profile and removes it; stop is ide
   const instance = await startIsolatedInstance(deps);
   await instance.stop();
   await instance.stop();
-  assert.deepEqual(calls.killed, [[101, "SIGTERM"], [102, "SIGTERM"]]);
+  assert.deepEqual(calls.killed, [[101, "SIGKILL"], [102, "SIGKILL"]]);
   assert.deepEqual(calls.removed, [PROFILE]);
 });
 
-test("SIGKILL when a process ignores SIGTERM", async () => {
-  const { deps, calls, alive } = fakeDeps();
-  alive.add(101);
-  deps.kill = (pid, signal) => { calls.killed.push([pid, signal]); if (signal === "SIGKILL") alive.delete(pid); };
-  await terminateProfileProcesses(deps, PROFILE, 1000);
-  assert.deepEqual(calls.killed.filter(([, signal]) => signal === "SIGKILL").map(([pid]) => pid), [101]);
+test("throwaway instances are killed at once, so Plasticity cannot block on its save-before-closing dialog", async () => {
+  const { deps, calls } = fakeDeps();
+  let slept = 0;
+  deps.sleep = async () => { slept += 1; };
+  await terminateProfileProcesses(deps, PROFILE);
+  assert.deepEqual(calls.killed.map(([, signal]) => signal), ["SIGKILL", "SIGKILL"]);
+  assert.ok(slept <= 40, "waits only until the processes are gone");
 });
 
 test("failed launch cleans up and rethrows", async () => {

@@ -93,14 +93,12 @@ export async function terminateProfileProcesses(deps: InstanceDeps, directory: s
   const pids = (await deps.listProcesses())
     .filter((entry) => entry.command.split(/\s+/).includes(marker))
     .map((entry) => entry.pid);
+  // The instance is throwaway: SIGTERM would make Plasticity ask to save unsaved changes and keep
+  // running behind a modal dialog, which also breaks HOOPS export in the next instance.
   for (const pid of pids) {
-    try { deps.kill(pid, "SIGTERM"); } catch { /* already gone */ }
-  }
-  for (let waited = 0; waited < graceMs && pids.some((pid) => deps.isAlive(pid)); waited += 250) await deps.sleep(250);
-  for (const pid of pids) {
-    if (!deps.isAlive(pid)) continue;
     try { deps.kill(pid, "SIGKILL"); } catch { /* already gone */ }
   }
+  for (let waited = 0; waited < graceMs && pids.some((pid) => deps.isAlive(pid)); waited += 250) await deps.sleep(250);
   return pids;
 }
 
