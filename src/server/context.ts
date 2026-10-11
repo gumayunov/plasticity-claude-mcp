@@ -13,7 +13,7 @@ import { PrintedThreadQualificationStore } from "../printing/thread-qualificatio
 import { PLASTICITY_MCP_INSTRUCTIONS } from "../server-instructions.ts";
 import { CATALOG_SCHEMA_PAGE_LIMIT, catalogSummary, compactJsonSchema, exposeDirectTool, type ToolCatalogMode } from "../tool-catalog.ts";
 import { importedReferenceSourceSchema, revision, intent, type JournalEntry, type NamedSelection } from "./schemas/common.ts";
-import { isRuntimeState, compactMutationResult, changesOnlyMutationResult, compactJournalChange, result } from "./results.ts";
+import { isRuntimeState, compactMutationResult, changesOnlyMutationResult, compactJournalChange, result, isMcpContent, type McpContentItem } from "./results.ts";
 import { PlasticitySession, type SessionLike, strengthDependenciesForSession } from "./session.ts";
 import { validatedStepPath, validatedParasolidPath, sha256File, provenanceSafeUrl } from "./files.ts";
 import { CompatibilityError } from "../plasticity/compat/errors.ts";
@@ -24,7 +24,7 @@ import type { RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TOOLSETS } from "./toolsets.ts";
 import { TOOL_EXAMPLES } from "./tool-examples.ts";
 
-export type ToolResult = ReturnType<typeof result>;
+export type ToolResult = { content: McpContentItem[] };
 export type ToolExtra = {
   _meta?: { progressToken?: string | number };
   sendNotification(notification: {
@@ -247,7 +247,8 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
       }).catch(() => undefined);
     }, 10_000);
     try {
-      return result(await exclusive(() => handler(schema.parse(input) as z.output<T>, extra)));
+      const value = await exclusive(() => handler(schema.parse(input) as z.output<T>, extra));
+      return isMcpContent(value) ? { content: value.__mcpContent } : result(value);
     } catch (error) {
       if (error instanceof CompatibilityError) throw new Error(`${name}: ${error.message}. Run plasticity_compatibility_report for the full list of affected tools.`);
       if (error instanceof z.ZodError) throw new Error(formatValidationIssues(name, error.issues));

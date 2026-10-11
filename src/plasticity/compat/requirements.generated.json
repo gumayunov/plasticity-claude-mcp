@@ -3299,6 +3299,13 @@
       "bindings": [],
       "commands": []
     },
+    "plasticity_view": {
+      "methods": [
+        "viewImages"
+      ],
+      "bindings": [],
+      "commands": []
+    },
     "plasticity_wait_for_change": {
       "methods": [],
       "bindings": [],

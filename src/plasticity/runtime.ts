@@ -1,4 +1,4 @@
-import { CdpClient } from "../cdp/client.ts";
+import { CdpClient, type ScreenshotOptions } from "../cdp/client.ts";
 import type { PlasticityTarget } from "../cdp/discovery.ts";
 import type { ConstructionPlaneDescriptor } from "./construction.ts";
 import { discoverNativeReferences } from "./compat/discovery.ts";
@@ -376,8 +376,8 @@ export class PlasticityRuntime {
     return await this.enqueue(() => this.client.send(method, params));
   }
 
-  async captureScreenshot(): Promise<string> {
-    return await this.enqueue(() => this.client.captureScreenshot());
+  async captureScreenshot(options: ScreenshotOptions = {}): Promise<string> {
+    return await this.enqueue(() => this.client.captureScreenshot(undefined, options));
   }
 
   private async enqueue<T>(operation: () => Promise<T>): Promise<T> {

@@ -31,5 +31,5 @@ export const TOOL_EXAMPLES: Readonly<Record<string, Record<string, unknown>>> = 
   plasticity_export_stl: { ids: [1], path: "/absolute/path/part.stl", revision: R },
   plasticity_import_step: { path: "/absolute/path/part.step", revision: R },
   plasticity_set_view: { view: "isometric", fit: true },
-  // plasticity_view: { views: ["isometric", "top"] },
+  plasticity_view: { views: ["isometric", "top"] },
 };

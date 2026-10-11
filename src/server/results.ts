@@ -344,3 +344,14 @@ export function compactJournalChange(diff: SceneDiff | null): ConstructionHistor
 export function result(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
 }
+
+export type McpContentItem = { type: "text"; text: string } | { type: "image"; data: string; mimeType: string };
+export interface McpContentValue { __mcpContent: McpContentItem[] }
+
+export function mcpContent(content: McpContentItem[]): McpContentValue {
+  return { __mcpContent: content };
+}
+
+export function isMcpContent(value: unknown): value is McpContentValue {
+  return typeof value === "object" && value !== null && Array.isArray((value as { __mcpContent?: unknown }).__mcpContent);
+}

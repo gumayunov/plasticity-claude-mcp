@@ -5,6 +5,56 @@ import { LONG_NATIVE_IMPORT_TIMEOUT_MS, type RuntimeState } from "../runtime.ts"
 import { assertAbsent, canonicalPath } from "./helpers.ts";
 import { OperationsBase } from "./base.ts";
 
+export type ViewName = "current" | "isometric" | "front" | "back" | "left" | "right" | "top" | "bottom";
+
+// Runs in the renderer: save or restore the first viewport camera so image capture leaves the user's view untouched.
+const CAMERA_SNIPPET = `function (action, saved) {
+  const viewport = Array.from(this.viewports)[0];
+  if (!viewport) throw new Error('Plasticity viewport is unavailable');
+  const camera = viewport.camera;
+  const target = camera.target ?? viewport.orbitControls?.target;
+  if (action === 'save') {
+    return { position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), up: camera.up.toArray(), zoom: camera.zoom, target: target?.toArray ? target.toArray() : null };
+  }
+  camera.position.fromArray(saved.position);
+  camera.quaternion.fromArray(saved.quaternion);
+  camera.up.fromArray(saved.up);
+  camera.zoom = saved.zoom;
+  if (saved.target && target?.fromArray) target.fromArray(saved.target);
+  camera.updateProjectionMatrix?.();
+  viewport.orbitControls?.update?.();
+  viewport.setNeedsRender?.();
+  return true;
+}`;
+
+// Runs in the renderer: view changes animate, so wait until the camera matrix is unchanged for three frames (max 1.5 s).
+const CAMERA_SETTLED_SNIPPET = `function () {
+  const camera = Array.from(this.viewports ?? [])[0]?.camera;
+  if (!camera?.matrixWorld) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    let previous = null;
+    let stable = 0;
+    const started = performance.now();
+    const tick = () => {
+      const current = Array.from(camera.matrixWorld.elements).join(',');
+      stable = current === previous ? stable + 1 : 0;
+      previous = current;
+      if (stable >= 3) return resolve(true);
+      if (performance.now() - started > 1500) return resolve(false);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}`;
+
+// Runs in the renderer: the 3D viewport's rectangle, so screenshots leave out the panels around it.
+const VIEWPORT_RECT_SNIPPET = `function () {
+  const element = document.querySelector('plasticity-viewport');
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+}`;
+
 export abstract class DocumentOperations extends OperationsBase {
   async undo(revision?: string): Promise<RuntimeState> {
     if (revision) await this.assertRevision(revision);
@@ -116,6 +166,10 @@ export abstract class DocumentOperations extends OperationsBase {
   }
 
   async setView(view: "front" | "back" | "left" | "right" | "top" | "bottom" | "isometric", fit: boolean): Promise<unknown> {
+    // Fit only what the user can see: hidden bodies (for example a large startup cube) must not shrink the framing.
+    const visibleVersionIds = fit
+      ? (await this.state()).bodies.filter((body) => body.visible && !body.hidden).map((body) => body.versionId)
+      : [];
     return await this.runtime.read(`async function (args) {
       if (this.executor.isBusy) throw new Error('Plasticity is busy');
       const viewport = Array.from(this.viewports)[0];
@@ -129,7 +183,7 @@ export abstract class DocumentOperations extends OperationsBase {
         await viewport.navigateToOrientation(({ front: 4, back: 1, left: 3, right: 0, top: 2, bottom: 5 })[args.view]);
       }
       if (args.fit) {
-        const bounds = [...this.geo.geometryModel].map(([, item]) => item.model?.FindBox?.()).filter(Boolean);
+        const bounds = [...this.geo.geometryModel].filter(([versionId]) => args.visibleVersionIds.includes(versionId)).map(([, item]) => item.model?.FindBox?.()).filter(Boolean);
         if (bounds.length) {
           const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
           for (const box of bounds) for (let i = 0; i < 3; i++) {
@@ -161,6 +215,44 @@ export abstract class DocumentOperations extends OperationsBase {
       }
       viewport.setNeedsRender();
       return { position: viewport.camera.position.toArray(), target: viewport.camera.target.toArray(), mode: viewport.camera.mode };
-    }`, [{ view, fit }]);
+    }`, [{ view, fit, visibleVersionIds }]);
+  }
+
+  async viewImages(views: readonly ViewName[], fit: boolean, maxWidth: number, format: "jpeg" | "png"): Promise<{
+    revision: string;
+    bodyCount: number;
+    cameraSettled: boolean;
+    images: Array<{ view: ViewName; width: number; height: number; data: string; mimeType: string }>;
+  }> {
+    const state = await this.state();
+    await this.runtime.cdp("Page.bringToFront");
+    if (await this.runtime.read<boolean>("function () { return document.hidden; }")) {
+      throw new Error("Plasticity renderer is hidden; activate Plasticity and retry");
+    }
+    const saved = await this.runtime.read<unknown>(CAMERA_SNIPPET, ["save", null]);
+    const images: Array<{ view: ViewName; width: number; height: number; data: string; mimeType: string }> = [];
+    let cameraSettled = true;
+    try {
+      for (const view of views) {
+        if (view !== "current") await this.setView(view, fit);
+        if (!(await this.runtime.read<boolean>(CAMERA_SETTLED_SNIPPET))) cameraSettled = false;
+        const viewport = await this.runtime.read<{ x: number; y: number; width: number; height: number } | null>(VIEWPORT_RECT_SNIPPET);
+        let rect = viewport;
+        if (!rect) {
+          const metrics = await this.runtime.cdp("Page.getLayoutMetrics") as { cssVisualViewport?: { clientWidth?: number; clientHeight?: number } };
+          rect = { x: 0, y: 0, width: metrics.cssVisualViewport?.clientWidth ?? maxWidth, height: metrics.cssVisualViewport?.clientHeight ?? Math.round(maxWidth * 0.625) };
+        }
+        const scale = Math.min(1, maxWidth / rect.width);
+        const data = await this.runtime.captureScreenshot({
+          format,
+          ...(format === "jpeg" ? { quality: 80 } : {}),
+          clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height, scale },
+        });
+        images.push({ view, width: Math.round(rect.width * scale), height: Math.round(rect.height * scale), data, mimeType: format === "jpeg" ? "image/jpeg" : "image/png" });
+      }
+    } finally {
+      await this.runtime.read(CAMERA_SNIPPET, ["restore", saved]);
+    }
+    return { revision: state.revision, bodyCount: state.bodies.length, cameraSettled, images };
   }
 }

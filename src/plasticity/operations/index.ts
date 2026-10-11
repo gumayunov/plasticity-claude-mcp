@@ -22,3 +22,4 @@ applyMixins(PlasticityOperations, [MeasureOperations, SceneOperations, Construct
 export * from "./types.ts";
 export * from "./native-snippets.ts";
 export * from "./helpers.ts";
+export type { ViewName } from "./document.ts";
