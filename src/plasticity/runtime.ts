@@ -1,6 +1,7 @@
 import { CdpClient } from "../cdp/client.ts";
 import type { PlasticityTarget } from "../cdp/discovery.ts";
 import type { ConstructionPlaneDescriptor } from "./construction.ts";
+import { discoverNativeReferences } from "./compat/discovery.ts";
 
 export const NATIVE_STATE_READ_TIMEOUT_MS = 300_000;
 export const LONG_NATIVE_IMPORT_TIMEOUT_MS = 300_000;
@@ -188,6 +189,7 @@ export class PlasticityRuntime {
   private readonly target: PlasticityTarget;
   private editorId: string;
   private readonly bindings = new Map<string, string>();
+  private discoveryStrategy = "";
   private operationTail: Promise<void> = Promise.resolve();
   private uncertain = false;
   private readonly connectClient: (url: string) => Promise<CdpClient>;
@@ -917,46 +919,14 @@ export class PlasticityRuntime {
   }
 
   private async refreshNativeReferences(): Promise<void> {
-    const handler = await this.client.send("Runtime.evaluate", {
-      expression: "document.querySelector('command-log')?.handleCommandStarted",
-      returnByValue: false,
-    }) as CallResult;
-    const handlerId = requireObjectId(handler.result, "Plasticity command log handler");
-    const handlerProperties = await getProperties(this.client, handlerId);
-    const scopesId = requireObjectId(handlerProperties.internalProperties?.find((property) => property.name === "[[Scopes]]")?.value, "Plasticity command scopes");
-    const scopes = await getProperties(this.client, scopesId);
-    const scopeIds = scopes.result
-      .filter((property) => /^\d+$/.test(property.name))
-      .map((property) => property.value?.objectId)
-      .filter((value): value is string => typeof value === "string");
-    if (scopeIds.length < 2) throw new Error("Plasticity native command scopes were not found");
-
-    const closure = await getProperties(this.client, scopeIds[0] as string);
-    const editorId = requireObjectId(
-      closure.result.find((property) => property.name === "editor")?.value,
-      "Plasticity editor",
-    );
-    const nativeScope = await getProperties(this.client, scopeIds[1] as string);
-    const bindings = new Map<string, string>();
-    for (const property of nativeScope.result) {
-      if (property.value?.objectId) bindings.set(property.name, property.value.objectId);
-    }
-
-    const retained = new Set([editorId, ...bindings.values()]);
+    const discovered = await discoverNativeReferences(this.client);
+    const retained = new Set([discovered.editorId, ...discovered.bindings.values()]);
     const previous = new Set([this.editorId, ...this.bindings.values()].filter(Boolean));
-    this.editorId = editorId;
+    this.editorId = discovered.editorId;
+    this.discoveryStrategy = discovered.strategy;
     this.bindings.clear();
-    for (const [name, objectId] of bindings) this.bindings.set(name, objectId);
-    const temporary = [
-      handlerId,
-      scopesId,
-      ...objectIds(handlerProperties.result),
-      ...objectIds(handlerProperties.internalProperties ?? []),
-      ...objectIds(scopes.result),
-      ...objectIds(closure.result),
-      ...objectIds(nativeScope.result),
-    ];
-    await this.releaseObjects([...previous, ...temporary], retained);
+    for (const [name, objectId] of discovered.bindings) this.bindings.set(name, objectId);
+    await this.releaseObjects([...previous, ...discovered.temporaryObjectIds], retained);
   }
 
   private async releaseObjects(objectIds: readonly string[], retained: ReadonlySet<string>): Promise<void> {
@@ -987,24 +957,4 @@ export class PlasticityRuntime {
     }
     return response.result?.value as T;
   }
-}
-
-async function getProperties(client: CdpClient, objectId: string): Promise<{
-  result: PropertyDescriptor[];
-  internalProperties?: PropertyDescriptor[];
-}> {
-  return await client.send("Runtime.getProperties", {
-    objectId,
-    ownProperties: true,
-    accessorPropertiesOnly: false,
-  }) as { result: PropertyDescriptor[]; internalProperties?: PropertyDescriptor[] };
-}
-
-function requireObjectId(value: RemoteObject | undefined, description: string): string {
-  if (!value?.objectId) throw new Error(`${description} is unavailable`);
-  return value.objectId;
-}
-
-function objectIds(properties: readonly PropertyDescriptor[]): string[] {
-  return properties.flatMap((property) => property.value?.objectId ? [property.value.objectId] : []);
 }
