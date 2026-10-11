@@ -16,6 +16,7 @@ import { importedReferenceSourceSchema, revision, intent, type JournalEntry, typ
 import { isRuntimeState, compactMutationResult, changesOnlyMutationResult, compactJournalChange, result } from "./results.ts";
 import { PlasticitySession, type SessionLike, strengthDependenciesForSession } from "./session.ts";
 import { validatedStepPath, validatedParasolidPath, sha256File, provenanceSafeUrl } from "./files.ts";
+import { CompatibilityError } from "../plasticity/compat/errors.ts";
 
 export type ToolResult = ReturnType<typeof result>;
 export type ToolExtra = {
@@ -196,6 +197,9 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
     }, 10_000);
     try {
       return result(await exclusive(() => handler(schema.parse(input) as z.output<T>, extra)));
+    } catch (error) {
+      if (error instanceof CompatibilityError) throw new Error(`${name}: ${error.message}. Run plasticity_compatibility_report for the full list of affected tools.`);
+      throw error;
     } finally {
       if (progressTimer) clearInterval(progressTimer);
     }

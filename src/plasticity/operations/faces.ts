@@ -557,7 +557,7 @@ export abstract class FacesOperations extends OperationsBase {
           const factory = new Factory(editor).resource(this);
           factory.vertices = selectedSnaps.map(snap => snap.model);
           if (!factory._vertices || !Array.isArray(factory._vertices.views)) {
-            throw new Error('Plasticity 26.1.3 shell-vertex ownership bridge is unavailable');
+            throw new Error('Shell-vertex ownership bridge is unavailable in this Plasticity version');
           }
           factory._vertices.views = selectedSnaps.map(snap => ({ parentItem: snap.item, position: snap.position }));
           factory.distance = args.distance;

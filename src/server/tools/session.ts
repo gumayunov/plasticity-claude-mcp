@@ -2,18 +2,39 @@ import { z } from "zod";
 import { ConstructionHistoryStore } from "../../plasticity/construction-history.ts";
 import { compactStatusSummary, isRuntimeState, compactSceneSnapshot, compactSceneChanges } from "../results.ts";
 import type { ToolContext } from "../context.ts";
+import { PROFILES } from "../../plasticity/compat/profiles/index.ts";
+import { buildCompatibilityReport, renderCompatibilityMarkdown } from "../../plasticity/compat/report.ts";
+import type { RequirementsManifest } from "../../plasticity/compat/requirements.ts";
+import requirements from "../../plasticity/compat/requirements.generated.json" with { type: "json" };
+import type { PlasticityOperations } from "../../plasticity/operations/index.ts";
+import type { PlasticityRuntime } from "../../plasticity/runtime.ts";
 
 export function registerSessionTools(ctx: ToolContext): void {
   const { session, constructionHistory, journal, journalPersistenceWarnings, tool, sceneChangeInput } = ctx;
+  const connectedRuntime = (): PlasticityRuntime | undefined => {
+    try {
+      const runtime = (session.get() as Partial<PlasticityOperations>).runtime as Partial<PlasticityRuntime> | undefined;
+      return typeof runtime?.getCompatibility === "function" ? runtime as PlasticityRuntime : undefined;
+    } catch {
+      return undefined;
+    }
+  };
   tool("plasticity_list_windows", "List Plasticity document windows exposed on loopback CDP.", z.object({}), async () =>
     (await session.windows()).map(({ id, title, url }) => ({ targetId: id, title, url })), true);
   tool("plasticity_diagnose", "Report MCP runtime and reachable Plasticity windows without changing a document.", z.object({}), async () =>
-    ({ node: process.version, platform: process.platform, architecture: process.arch, supportedPlasticity: "26.1.3", endpoint: process.env.PLASTICITY_CDP_URL ?? "http://127.0.0.1:9223", windows: await session.windows() }), true);
+    ({ node: process.version, platform: process.platform, architecture: process.arch, plasticity: connectedRuntime()?.getCompatibility() ?? { connected: false, supportedProfiles: PROFILES.filter((profile) => profile.status === "supported").map((profile) => profile.version) }, endpoint: process.env.PLASTICITY_CDP_URL ?? "http://127.0.0.1:9223", windows: await session.windows() }), true);
   tool("plasticity_connect", "Connect this MCP process to one explicit Plasticity window and return its compact initial scene summary. Body bounds/counts are paginated; use plasticity_body_info for exact topology of a selected body.", z.object({ targetId: z.string().min(1) }), async ({ targetId }) => {
     const state = await session.connect(targetId);
     if (!isRuntimeState(state)) throw new Error("Plasticity returned an invalid connected document state");
-    return compactStatusSummary(state, 0, 50);
+    const runtime = connectedRuntime();
+    return { ...compactStatusSummary(state, 0, 50), ...(runtime ? { plasticity: runtime.getCompatibility() } : {}) };
   });
+  tool("plasticity_compatibility_report", "Check whether the connected Plasticity version provides every native factory, command and editor path this MCP server uses, and list the tools affected by anything missing. Read-only.", z.object({}), async () => {
+    const runtime = connectedRuntime();
+    if (!runtime) throw new Error("Connect to a Plasticity window with plasticity_connect first");
+    const report = buildCompatibilityReport(await runtime.probeCompatibility(), requirements as RequirementsManifest, runtime.getProfile());
+    return { ...report, markdown: renderCompatibilityMarkdown(report) };
+  }, true);
   tool("plasticity_status", "Read a compact document summary with identity, revision, exact body bounds, topology counts, and Undo/Redo state. Body summaries are paginated with bodyOffset/bodyLimit (default 0/50, maximum 200); follow bodyPagination.nextOffset and pass the prior page's revision as expectedRevision so scene edits cannot mix pages. Use plasticity_body_info for exact face/edge/vertex geometry of one body, or plasticity_list_bodies for paginated topology details.", z.object({
     bodyOffset: z.number().int().min(0).max(1_000_000).default(0),
     bodyLimit: z.number().int().min(1).max(200).default(50),
@@ -86,7 +107,7 @@ export function registerSessionTools(ctx: ToolContext): void {
       },
     };
   }, true);
-  tool("plasticity_capabilities", "Page through native renderer bindings found in Plasticity 26.1.3. Defaults to 100 bindings per page; filter by case-insensitive substring with query. Returns total and matching counts plus nextOffset so large binding lists do not flood MCP context.", z.object({
+  tool("plasticity_capabilities", "Page through native renderer bindings found in the connected Plasticity. Defaults to 100 bindings per page; filter by case-insensitive substring with query. Returns total and matching counts plus nextOffset so large binding lists do not flood MCP context.", z.object({
     query: z.string().trim().min(1).max(200).optional(),
     offset: z.number().int().nonnegative().default(0),
     limit: z.number().int().min(1).max(250).default(100),

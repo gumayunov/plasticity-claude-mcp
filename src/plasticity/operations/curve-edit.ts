@@ -478,7 +478,7 @@ export abstract class CurveEditOperations extends OperationsBase {
           const factory = new Factory(editor).resource(this);
           factory.segment = segment;
           const model = factory._segment?.model;
-          if (!model) throw new Error('Plasticity 26.1.3 Insert Knot model bridge is unavailable');
+          if (!model) throw new Error('Insert Knot model bridge is unavailable in this Plasticity version');
           // InsertKnotFactory's public segment setter does not populate its private UI parameter.
           // Keep the native factory transaction, database replacement, and history behavior while
           // supplying the explicit normalized MCP parameter to the same kernel Edge::InsertKnot call.
@@ -539,7 +539,7 @@ export abstract class CurveEditOperations extends OperationsBase {
           const factory = new Factory(editor).resource(this);
           factory.segment = segment;
           const model = factory._segment?.model;
-          if (!model) throw new Error('Plasticity 26.1.3 Split Segment model bridge is unavailable');
+          if (!model) throw new Error('Split Segment model bridge is unavailable in this Plasticity version');
           // SplitSegmentFactory receives the split parameter only from its private UI command.
           // Preserve the native commit/database/history path and supply the explicit MCP value
           // to the same normalized Edge::SplitAt call used by that factory.
