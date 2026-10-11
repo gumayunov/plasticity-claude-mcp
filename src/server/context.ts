@@ -19,6 +19,7 @@ import { validatedStepPath, validatedParasolidPath, sha256File, provenanceSafeUr
 import { CompatibilityError } from "../plasticity/compat/errors.ts";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { formatValidationIssues, withNextStep } from "./error-hints.ts";
+import { closestNames, rankCatalog } from "./catalog-search.ts";
 
 export type ToolResult = ReturnType<typeof result>;
 export type ToolExtra = {
@@ -44,6 +45,7 @@ export type RoutedTool = {
   inputSchema: z.ZodType;
   annotations: { readOnlyHint: boolean; destructiveHint: boolean; openWorldHint: boolean };
   callback: (input: unknown, extra: ToolExtra) => Promise<ToolResult>;
+  toolset: string;
 };
 export type CadReferenceAcquisition = {
   bytes: number;
@@ -90,7 +92,7 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
   const rawRegisterTool = server.registerTool.bind(server) as unknown as RegisterTool;
   (server as unknown as { registerTool: RegisterTool }).registerTool = (name, config, callback) => {
     const registered = exposeDirectTool(catalogMode, name) ? rawRegisterTool(name, config, callback) : undefined;
-    routedTools.set(name, { name, description: config.description, inputSchema: config.inputSchema, annotations: config.annotations, callback });
+    routedTools.set(name, { name, description: config.description, inputSchema: config.inputSchema, annotations: config.annotations, callback, toolset: "session" });
     return registered;
   };
   const registerTool = server.registerTool.bind(server) as unknown as RegisterTool;
@@ -111,18 +113,16 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
     const input = plasticityCallSchema.parse(rawInput);
     if (input.toolName !== "catalog") {
       const selected = routedTools.get(input.toolName);
-      if (!selected || input.toolName === "plasticity_call") throw new Error(`Unknown Plasticity MCP operation: ${input.toolName}`);
+      if (!selected || input.toolName === "plasticity_call") {
+        throw new Error(`Unknown Plasticity MCP operation: ${input.toolName}. Did you mean: ${closestNames(input.toolName, [...routedTools.keys()]).join(", ")}?`);
+      }
       const parsedArguments = await selected.inputSchema.safeParseAsync(input.arguments);
       if (!parsedArguments.success) throw new Error(formatValidationIssues(selected.name, parsedArguments.error.issues));
       return await selected.callback(parsedArguments.data, extra);
     }
 
-    const query = input.query?.toLocaleLowerCase();
     const catalog = [...routedTools.values()].filter((candidate) => candidate.name !== "plasticity_call");
-    const exact = catalog.filter((candidate) => candidate.name.toLocaleLowerCase() === query);
-    const matching = (exact.length > 0 ? exact : catalog)
-      .filter((candidate) => !query || candidate.name.toLocaleLowerCase().includes(query) || candidate.description.toLocaleLowerCase().includes(query))
-      .sort((left, right) => left.name.localeCompare(right.name));
+    const matching = input.query ? rankCatalog(catalog, input.query) : [...catalog].sort((left, right) => left.name.localeCompare(right.name));
     const page = matching.slice(input.offset, input.offset + input.limit);
     const withSchemas = input.schemas ?? page.length <= CATALOG_SCHEMA_PAGE_LIMIT;
     return result({
@@ -134,6 +134,7 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
         validationNote: "The original server-side Zod schema is authoritative; cross-field refinements may be stricter than the exported JSON Schema.",
         tools: page.map((candidate) => ({
           name: candidate.name,
+          toolset: candidate.toolset,
           description: candidate.description,
           annotations: candidate.annotations,
           inputSchema: compactJsonSchema(z.toJSONSchema(candidate.inputSchema, { unrepresentable: "any" })),
@@ -142,6 +143,7 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
         schemaNote: "Summaries only. Query an exact operation name, or narrow the page to a few operations, for its full description and input schema.",
         tools: page.map((candidate) => ({
           name: candidate.name,
+          toolset: candidate.toolset,
           summary: catalogSummary(candidate.description),
           readOnly: candidate.annotations.readOnlyHint,
         })),
