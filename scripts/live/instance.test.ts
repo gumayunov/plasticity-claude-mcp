@@ -91,3 +91,15 @@ test("foreignMainPids lists only main Plasticity processes outside live profiles
     { pid: 4, command: "/usr/bin/vim notes.txt" },
   ]), [1]);
 });
+
+test("the stop function is handed out before the launch, so an interrupt during startup can stop it", async () => {
+  const { deps, calls } = fakeDeps();
+  let stopBeforeLaunch: (() => Promise<void>) | undefined;
+  deps.launch = async () => {
+    assert.ok(stopBeforeLaunch, "stop must be registered before launching");
+    await stopBeforeLaunch();
+    throw new Error("interrupted");
+  };
+  await assert.rejects(startIsolatedInstance(deps, (stop) => { stopBeforeLaunch = stop; }), /interrupted/);
+  assert.ok(calls.removed.includes(PROFILE));
+});

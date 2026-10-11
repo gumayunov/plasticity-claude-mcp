@@ -53,3 +53,24 @@ test("a failed connect stops the instance and closes MCP", async () => {
   await assert.rejects(new LiveSessionManager(deps).open(), /no editor/);
   assert.deepEqual(events, ["start 1", "mcp close", "stop 1"]);
 });
+
+test("closing while the instance is still launching uses the registered stop", async () => {
+  const events: string[] = [];
+  let release: (() => void) | undefined;
+  const manager = new LiveSessionManager({
+    async startInstance(register) {
+      register(async () => { events.push("early stop"); });
+      await new Promise<void>((resolve) => { release = resolve; });
+      throw new Error("launch aborted");
+    },
+    async startMcp() { throw new Error("not reached"); },
+    async connect() {},
+    async log() {},
+  });
+  const opening = manager.open().catch((error: unknown) => error);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await manager.close();
+  assert.deepEqual(events, ["early stop"]);
+  release?.();
+  await opening;
+});

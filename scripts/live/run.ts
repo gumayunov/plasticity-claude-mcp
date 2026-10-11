@@ -9,9 +9,10 @@ import { sanitizeEvidence } from "./harness.ts";
 import { defaultInstanceDeps, foreignMainPids, startIsolatedInstance } from "./instance.ts";
 import { projectRoot, startMcp } from "./mcp.ts";
 import { diffAgainstBaseline, formatResultLine, formatSummary, readBaseline, writeBaseline, writeRunReports } from "./report.ts";
-import { clearStartupDocument, connectWithRetry, createResetter } from "./reset.ts";
+import { connectWithRetry, createResetter, openHarnessDocument } from "./reset.ts";
 import { exitCodeFor, runChecks, type PlannedCheck } from "./runner.ts";
 import { withScratchDirectory } from "./scratch.ts";
+import { installSignalCleanup } from "./signals.ts";
 import { LiveSessionManager, type LiveSession } from "./session.ts";
 import { smokeChecks } from "./smoke/index.ts";
 import type { CheckResult, RunReport, Tier } from "./types.ts";
@@ -84,17 +85,36 @@ async function main(): Promise<number> {
   const userPlasticity = foreignMainPids(await instanceDeps.listProcesses());
   if (userPlasticity.length > 0) await log(`user Plasticity processes left untouched: ${userPlasticity.join(", ")}`);
   const sessions = new LiveSessionManager({
-    startInstance: () => startIsolatedInstance(),
+    startInstance: (registerStop) => startIsolatedInstance(undefined, registerStop),
     startMcp: (instance) => startMcp({ cdpUrl: instance.cdpUrl, stateDir: join(runDir, "mcp-state") }),
-    connect: async (mcp, instance) => { await connectWithRetry(mcp, instance.targetId); },
+    connect: async (mcp, instance) => {
+      await connectWithRetry(mcp, instance.targetId);
+      // Never edit whatever document the new instance reopened (it may be a user's autosaved file).
+      await openHarnessDocument(mcp, {
+        fixture: join(projectRoot, "scripts", "live", "fixtures", "empty.plasticity"),
+        target: join(runsRoot, "harness-document.plasticity"),
+        backupPath: join(scratchRoot, `before-harness-document-${Date.now()}.plasticity`),
+      });
+    },
     log,
   });
-  const onSigint = () => { void sessions.close().finally(() => process.exit(130)); };
-  process.once("SIGINT", onSigint);
+  let finished = false;
+  const finish = async () => {
+    if (finished) return;
+    finished = true;
+    await sessions.close();
+    await rm(scratchRoot, { recursive: true, force: true });
+    const vanished = userPlasticity.filter((pid) => !instanceDeps.isAlive(pid));
+    if (vanished.length > 0) {
+      const warning = `WARNING: user Plasticity process(es) ${vanished.join(", ")} are no longer running after the live run`;
+      console.error(warning);
+      await log(warning);
+    }
+  };
+  const uninstallSignals = installSignalCleanup(finish);
   try {
     try {
-      const opened = await sessions.open();
-      await clearStartupDocument(opened.mcp);
+      await sessions.open();
     } catch (error) {
       console.error(`Live harness could not start: ${error instanceof Error ? error.message : String(error)}`);
       return 2;
@@ -167,15 +187,8 @@ async function main(): Promise<number> {
     }
     return exitCodeFor(outcome, diff?.regressions.length ?? 0);
   } finally {
-    process.removeListener("SIGINT", onSigint);
-    await sessions.close();
-    await rm(scratchRoot, { recursive: true, force: true });
-    const vanished = userPlasticity.filter((pid) => !instanceDeps.isAlive(pid));
-    if (vanished.length > 0) {
-      const warning = `WARNING: user Plasticity process(es) ${vanished.join(", ")} are no longer running after the live run`;
-      console.error(warning);
-      await log(warning);
-    }
+    uninstallSignals();
+    await finish();
   }
 }
 

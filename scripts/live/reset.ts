@@ -1,4 +1,7 @@
-import { CheckFailure, assertEmptyDocument, snapshot } from "./harness.ts";
+import { copyFile, mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
+
+import { assertEmptyDocument, snapshot } from "./harness.ts";
 import type { McpCaller } from "./types.ts";
 
 export interface ConnectRetryOptions {
@@ -29,20 +32,26 @@ export async function connectWithRetry(mcp: McpCaller, targetId: string, options
   }
 }
 
-// The isolated instance opens the startup (or last) document; plain bodies in it are safe to clear.
-// Nothing is saved: a saved harness file would become the "last document" in the shared ~/.plasticity state.
-export async function clearStartupDocument(mcp: McpCaller): Promise<void> {
-  let state = await snapshot(mcp);
-  if (state.bodyTotal > 0 && state.instanceCount === 0 && state.nonRootGroupCount === 0) {
-    await mcp.call("plasticity_delete", { ids: state.bodies.map((body) => body.id), intent: "Clear the isolated startup document", revision: state.revision });
-    state = await snapshot(mcp);
-  }
-  try {
-    assertEmptyDocument(state);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new CheckFailure(`The isolated Plasticity startup document is not empty (check ~/.plasticity/startup.plasticity): ${reason}`);
-  }
+export interface HarnessDocument {
+  fixture: string;
+  target: string;
+  backupPath: string;
+}
+
+// A new Plasticity instance may reopen whatever document was used last, possibly a user's file that
+// Plasticity autosaves. Before changing anything, switch to a harness-owned copy of an empty document
+// (open_document writes a backup of the previous document first), so edits and autosaves only reach it.
+export async function openHarnessDocument(mcp: McpCaller, document: HarnessDocument): Promise<void> {
+  await mkdir(dirname(document.target), { recursive: true });
+  await copyFile(document.fixture, document.target);
+  const before = await snapshot(mcp);
+  await mcp.call("plasticity_open_document", {
+    path: document.target,
+    backupPath: document.backupPath,
+    intent: "Open the live harness document",
+    revision: before.revision,
+  });
+  assertEmptyDocument(await snapshot(mcp));
 }
 
 // Resets by deleting bodies instead of opening a file: opening over unsaved changes makes Plasticity

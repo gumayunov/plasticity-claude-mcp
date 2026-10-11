@@ -102,25 +102,36 @@ export async function terminateProfileProcesses(deps: InstanceDeps, directory: s
   return pids;
 }
 
-export async function startIsolatedInstance(deps: InstanceDeps = defaultInstanceDeps()): Promise<IsolatedInstance> {
+export async function startIsolatedInstance(
+  deps: InstanceDeps = defaultInstanceDeps(),
+  onStopAvailable: (stop: () => Promise<void>) => void = () => {},
+): Promise<IsolatedInstance> {
   const userDataDirectory = await deps.makeTempDir();
   const rendererPort = await deps.freePort(new Set());
   const inspectorPort = await deps.freePort(new Set([rendererPort]));
+  const terminate = async () => {
+    await terminateProfileProcesses(deps, userDataDirectory);
+    await deps.removeDir(userDataDirectory);
+  };
+  let stopRequested = false;
   let stopping: Promise<void> | undefined;
   const stop = () => {
-    stopping ??= (async () => {
-      await terminateProfileProcesses(deps, userDataDirectory);
-      await deps.removeDir(userDataDirectory);
-    })();
+    stopRequested = true;
+    stopping ??= terminate();
     return stopping;
   };
+  // Hand out stop before launching: the launch itself is the longest part of startup.
+  onStopAvailable(stop);
   try {
     const targets = await deps.launch({ rendererPort, inspectorPort, userDataDirectory });
+    if (stopRequested) throw new Error("Isolated Plasticity was stopped while it was starting");
     const target = targets[0];
     if (!target) throw new Error("Isolated Plasticity exposed no renderer targets");
     return { cdpUrl: `http://127.0.0.1:${rendererPort}`, targetId: target.id, userDataDirectory, rendererPort, inspectorPort, stop };
   } catch (error) {
-    await stop();
+    // A stop requested during launch may have run before the process existed; terminate again.
+    if (stopRequested) await terminate();
+    else await stop();
     throw error;
   }
 }

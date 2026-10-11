@@ -7,7 +7,7 @@ export interface LiveSession {
 }
 
 export interface LiveSessionDeps {
-  startInstance(): Promise<IsolatedInstance>;
+  startInstance(registerStop: (stop: () => Promise<void>) => void): Promise<IsolatedInstance>;
   startMcp(instance: IsolatedInstance): Promise<McpCaller>;
   connect(mcp: McpCaller, instance: IsolatedInstance): Promise<void>;
   log(line: string): Promise<void>;
@@ -17,6 +17,7 @@ export interface LiveSessionDeps {
 export class LiveSessionManager {
   current: LiveSession | undefined;
   private starting: IsolatedInstance | undefined;
+  private launchingStop: (() => Promise<void>) | undefined;
   private readonly deps: LiveSessionDeps;
 
   constructor(deps: LiveSessionDeps) {
@@ -24,7 +25,12 @@ export class LiveSessionManager {
   }
 
   async open(): Promise<LiveSession> {
-    const instance = await this.deps.startInstance();
+    let instance: IsolatedInstance;
+    try {
+      instance = await this.deps.startInstance((stop) => { this.launchingStop = stop; });
+    } finally {
+      this.launchingStop = undefined;
+    }
     this.starting = instance;
     await this.deps.log(`started instance cdp=${instance.cdpUrl} target=${instance.targetId} profile=${instance.userDataDirectory}`);
     try {
@@ -52,8 +58,14 @@ export class LiveSessionManager {
   async close(): Promise<void> {
     const live = this.current;
     const starting = this.starting;
+    const launchingStop = this.launchingStop;
     this.current = undefined;
     this.starting = undefined;
+    this.launchingStop = undefined;
+    if (launchingStop) {
+      await launchingStop().catch(() => undefined);
+      await this.deps.log("stopped instance that was still launching");
+    }
     if (live) {
       await live.mcp.close().catch(() => undefined);
       await live.instance.stop().catch(() => undefined);
