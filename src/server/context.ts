@@ -22,6 +22,7 @@ import { formatValidationIssues, withNextStep } from "./error-hints.ts";
 import { closestNames, rankCatalog } from "./catalog-search.ts";
 import type { RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TOOLSETS } from "./toolsets.ts";
+import { TOOL_EXAMPLES } from "./tool-examples.ts";
 
 export type ToolResult = ReturnType<typeof result>;
 export type ToolExtra = {
@@ -99,6 +100,11 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
     const registered = rawRegisterTool(name, config, callback) as RegisteredTool;
     if (!exposeDirectTool(catalogMode, name)) registered.disable();
     routedTools.set(name, { name, description: config.description, inputSchema: config.inputSchema, annotations: config.annotations, callback, toolset: currentToolset, registered });
+    const example = TOOL_EXAMPLES[name];
+    if (example !== undefined) {
+      const checked = config.inputSchema.safeParse(example);
+      if (!checked.success) throw new Error(`Catalog example for ${name} does not match its schema: ${checked.error.message}`);
+    }
     return registered;
   };
   const toolsetRows = () => TOOLSETS.map((toolset) => {
@@ -168,6 +174,7 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
           description: candidate.description,
           annotations: candidate.annotations,
           inputSchema: compactJsonSchema(z.toJSONSchema(candidate.inputSchema, { unrepresentable: "any" })),
+          ...(TOOL_EXAMPLES[candidate.name] ? { example: TOOL_EXAMPLES[candidate.name] } : {}),
         })),
       } : {
         schemaNote: "Summaries only. Query an exact operation name, or narrow the page to a few operations, for its full description and input schema.",
