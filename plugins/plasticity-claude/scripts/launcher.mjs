@@ -14,7 +14,7 @@ if (!root) {
   process.exit(1);
 }
 
-const server = ["scripts/run-server.ts", "--compact-tools"];
+const server = ["scripts/run-server.ts", "--compact-tools", "--changes-only-responses"];
 const mise = existsSync(join(root, "mise.toml")) ? findExecutable("mise") : undefined;
 const [command, args] = mise
   ? [mise, ["exec", "-C", root, "--", "node", ...server]]

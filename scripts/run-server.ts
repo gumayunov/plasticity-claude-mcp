@@ -82,9 +82,11 @@ const strength = strengthDependenciesForSession(session, {
 const threadQualifications = process.env.PLASTICITY_THREAD_QUALIFICATION_ROOT
   ? new PrintedThreadQualificationStore(process.env.PLASTICITY_THREAD_QUALIFICATION_ROOT)
   : new PrintedThreadQualificationStore();
+// --changes-only-responses: answer mutations with their change instead of the scene summary.
+const options = { mutationResponses: process.argv.includes("--changes-only-responses") ? "changes" as const : "summary" as const };
 const server = process.argv.includes("--compact-tools")
-  ? createCompactServer(session, strength, threadQualifications)
-  : createServer(session, strength, threadQualifications);
+  ? createCompactServer(session, strength, threadQualifications, undefined, undefined, undefined, options)
+  : createServer(session, strength, threadQualifications, undefined, undefined, undefined, options);
 const transport = new StdioServerTransport();
 await server.connect(transport);
 

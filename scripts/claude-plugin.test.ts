@@ -59,6 +59,7 @@ test("the launcher runs the server from the configured repository over stdio", a
   const reported = JSON.parse(stdout) as { cwd: string; argv: string[]; stdin: string };
   assert.equal(reported.cwd, await realpath(repository));
   assert.ok(reported.argv.includes("--compact-tools"));
+  assert.ok(reported.argv.includes("--changes-only-responses"), "Claude Code gets mutation answers without the repeated scene summary");
   assert.equal(reported.stdin, "ping\n");
 });
 

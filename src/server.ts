@@ -100,12 +100,58 @@ function compactChangedBody(body: RuntimeState["bodies"][number]) {
   };
 }
 
+function compactMutationResult<T>(value: RuntimeState, change: SceneDiff): T {
+  return {
+    ...compactStatusSummary(value, 0, 20),
+    change: {
+      sceneChanged: change.sceneChanged,
+      revisionChanged: change.revisionChanged,
+      changed: change.changed,
+      documentChanged: change.documentChanged,
+      added: change.added.map(compactChangedBody),
+      removed: change.removed.map(compactChangedBody),
+      modified: change.modified.map((item) => ({
+        id: item.id,
+        renamed: item.renamed,
+        geometryChanged: item.geometryChanged,
+        appearanceChanged: item.appearanceChanged,
+        visibilityChanged: item.visibilityChanged,
+        before: compactChangedBody(item.before),
+        after: compactChangedBody(item.after),
+      })),
+      regionsAdded: change.regionsAdded.map(({ id, displayBoundsMm }) => ({ id, displayBoundsMm })),
+      regionsRemoved: change.regionsRemoved.map(({ id, displayBoundsMm }) => ({ id, displayBoundsMm })),
+      regionsModified: change.regionsModified.map(({ id, before, after }) => ({
+        id,
+        before: { displayBoundsMm: before.displayBoundsMm },
+        after: { displayBoundsMm: after.displayBoundsMm },
+      })),
+      constructionPlanesAdded: change.constructionPlanesAdded.map((plane) => ({ nativeId: plane.nativeId, name: plane.name })),
+      constructionPlanesRemoved: change.constructionPlanesRemoved.map((plane) => ({ nativeId: plane.nativeId, name: plane.name })),
+      constructionPlanesModified: change.constructionPlanesModified.map(({ nativeId, before, after }) => ({
+        nativeId,
+        before: { name: before.name },
+        after: { name: after.name },
+      })),
+      activeWorkplaneChanged: change.activeWorkplaneChanged,
+      materialsChanged: change.materialsChanged,
+      measurementsChanged: change.measurementsChanged,
+      sectionAnalysesChanged: change.sectionAnalysesChanged,
+      instancesChanged: change.instancesChanged,
+      referenceMeshesChanged: change.referenceMeshesChanged,
+      groupsChanged: change.groupsChanged,
+    },
+  } as T;
+}
+
 /**
  * A mutation answers with what it changed, not with the whole scene: parts
  * that stayed the same are reduced to counts and tokens, changed parts are
  * returned in full. plasticity_status still reads the complete summary.
+ * Selected with mutationResponses: "changes"; the default keeps the summary
+ * shape that the live acceptance scripts read.
  */
-function compactMutationResult<T>(value: RuntimeState, change: SceneDiff): T {
+function changesOnlyMutationResult<T>(value: RuntimeState, change: SceneDiff): T {
   const planesChanged = change.constructionPlanesAdded.length > 0
     || change.constructionPlanesRemoved.length > 0
     || change.constructionPlanesModified.length > 0
@@ -1934,6 +1980,14 @@ export function strengthDependenciesForSession(
   };
 }
 
+export interface ServerOptions {
+  /**
+   * "summary" (default) answers a mutation with the paginated scene summary
+   * plus the change; "changes" returns only what the mutation changed.
+   */
+  mutationResponses?: "summary" | "changes";
+}
+
 export function createServer(
   session?: SessionLike,
   suppliedStrength?: StrengthDependencies,
@@ -1941,8 +1995,9 @@ export function createServer(
   stepImportReferences?: StepImportReferenceStore,
   constructionHistory?: ConstructionHistoryStore | null,
   stepReferenceDownloader?: StepReferenceDownloaderLike,
+  options?: ServerOptions,
 ): McpServer {
-  return createServerWithCatalog("full", session, suppliedStrength, threadQualifications, stepImportReferences, constructionHistory, stepReferenceDownloader);
+  return createServerWithCatalog("full", session, suppliedStrength, threadQualifications, stepImportReferences, constructionHistory, stepReferenceDownloader, options);
 }
 
 export function createCompactServer(...args: Parameters<typeof createServer>): McpServer {
@@ -1959,7 +2014,9 @@ function createServerWithCatalog(
   stepReferenceDownloader: StepReferenceDownloaderLike = new StepReferenceDownloader(process.env.PLASTICITY_REFERENCE_ARTIFACT_ROOT
     ? { root: process.env.PLASTICITY_REFERENCE_ARTIFACT_ROOT }
     : {}),
+  options: ServerOptions = {},
 ): McpServer {
+  const mutationResult = options.mutationResponses === "changes" ? changesOnlyMutationResult : compactMutationResult;
   const server = new McpServer({ name: "plasticity-mcp", version: "0.2.2" }, { instructions: PLASTICITY_MCP_INSTRUCTIONS });
   const strength = suppliedStrength ?? strengthDependenciesForSession(session, {
     analysisUnavailableReason: "The isolated analysis provider was not initialized by this server launcher",
@@ -2159,7 +2216,7 @@ function createServerWithCatalog(
       journal.push(entry);
       await persistJournalEntry(entry);
       onCompleted?.(before, after);
-      return isRuntimeState(value) ? compactMutationResult(after, sceneDiff) : value;
+      return isRuntimeState(value) ? mutationResult<T>(after, sceneDiff) : value;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       entry.status = /timed?\s*out|(?:socket|connection|transport|session|client)\s+(?:was\s+)?closed|uncertain/i.test(message) ? "unknown" : "failed";
