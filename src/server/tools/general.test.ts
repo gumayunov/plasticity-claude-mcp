@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { AnalysisClient } from "../../codex/analysis-client.ts";
-import { PlasticitySession, strengthDependenciesForSession, type SessionLike } from "../../server.ts";
+import { PlasticitySession, strengthDependenciesForSession, type SessionLike } from "../index.ts";
 import { StrengthStore } from "../../strength/store.ts";
 import { type StoredCohesiveReport } from "../../strength/fem/cohesive-report-store.ts";
 import { verifyCohesiveReportEvidence } from "../../strength/fem/cohesive-report-evidence.ts";

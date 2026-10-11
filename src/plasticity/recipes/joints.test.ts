@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PlasticityRecipes } from "../recipes.ts";
+import { PlasticityRecipes } from "./index.ts";
 import { type RecipeOperations, body, counterboreOperations, scene } from "./test-support.ts";
 
 test("cantilever snap fit derives a hook profile and joins it through the rib pipeline", async () => {

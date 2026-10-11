@@ -1,4 +1,4 @@
-import { PlasticityOperations } from "../operations.ts";
+import { PlasticityOperations } from "./index.ts";
 import { frameFromOriginNormalX } from "../construction.ts";
 import type { PlasticityRuntime, RuntimeState } from "../runtime.ts";
 

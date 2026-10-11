@@ -1,4 +1,4 @@
-import { createServer as createPlasticityServer, type ServerOptions, type SessionLike } from "../server.ts";
+import { createServer as createPlasticityServer, type ServerOptions, type SessionLike } from "./index.ts";
 import type { RuntimeState } from "../plasticity/runtime.ts";
 import { PrintedThreadQualificationStore } from "../printing/thread-qualification.ts";
 import { StepImportReferenceStore } from "../plasticity/import-reference-store.ts";

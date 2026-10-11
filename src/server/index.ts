@@ -1,85 +1,33 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { createHash, randomUUID } from "node:crypto";
-import { createReadStream } from "node:fs";
-import { realpath, stat } from "node:fs/promises";
-import { extname, resolve } from "node:path";
 import { z } from "zod";
-
-import { discoverPlasticityTargets } from "./cdp/discovery.ts";
-import { diffScenes, type SceneDiff, type TrackedDatum } from "./plasticity/change-tracker.ts";
-import { ConstructionHistoryStore, type ConstructionHistoryEntry } from "./plasticity/construction-history.ts";
-import { StepImportReferenceStore } from "./plasticity/import-reference-store.ts";
-import { StepReferenceDownloader, type StepReferenceDownloaderLike } from "./plasticity/step-reference-downloader.ts";
-import { PlasticityOperations } from "./plasticity/operations.ts";
-import { boundsCenter, quaternionFromXyzDegrees, rotateBoundsAroundPivot, unionBounds } from "./plasticity/print-orientation.ts";
-import { PlasticityRecipes } from "./plasticity/recipes.ts";
-import { SplitSolidByPlaneRecipe } from "./plasticity/split-solid.ts";
-import { SplitSolidByPlanesRecipe } from "./plasticity/split-solid-by-planes.ts";
-import { SplitSolidToVolumeRecipe } from "./plasticity/split-solid-to-volume.ts";
-import { PrintedThreadRecipes } from "./plasticity/printed-thread-recipes.ts";
-import { acquireWindowOwnership, type WindowOwnership } from "./plasticity/ownership.ts";
-import { connectSessionWindow, type SessionConnection } from "./plasticity/session-lifecycle.ts";
-import { LONG_NATIVE_IMPORT_TIMEOUT_MS, NATIVE_STATE_READ_TIMEOUT_MS, PlasticityRuntime, type RuntimeState } from "./plasticity/runtime.ts";
-import { findEdges, findFaces, type EdgeQuery, type FaceQuery } from "./plasticity/semantic.ts";
-import { fastenerDesignationInputSchema, resolveFastenerDesignation } from "./fasteners/designation.ts";
-import { checkFastenerStack, fastenerStackInputSchema } from "./fasteners/stack.ts";
-import type { AnalysisClient } from "./codex/analysis-client.ts";
-import type { ReferenceSearchClient } from "./codex/reference-search-client.ts";
-import type { CadBinding } from "./strength/contracts.ts";
-import { registerStrengthTools, type StrengthDependencies } from "./strength/mcp.ts";
-import { StrengthStore } from "./strength/store.ts";
-import { FemReportStore } from "./strength/fem/fem-report-store.ts";
-import { CohesiveReportStore } from "./strength/fem/cohesive-report-store.ts";
-import { analyzeStaticSolid } from "./strength/fem/analyze-static.ts";
-import { analyzeCohesiveInterface, type CohesiveAnalysisRequest } from "./strength/fem/cohesive-analysis.ts";
-import {
-  PrintedThreadQualificationStore,
-  printedThreadProcessIdentitySchema,
-  printedThreadQualificationFilterSchema,
-  printedThreadQualificationInputSchema,
-  printedThreadQualificationMatchSchema,
-} from "./printing/thread-qualification.ts";
-import { PLASTICITY_MCP_INSTRUCTIONS } from "./server-instructions.ts";
-import { CATALOG_SCHEMA_PAGE_LIMIT, catalogSummary, compactJsonSchema, exposeDirectTool, type ToolCatalogMode } from "./tool-catalog.ts";
-import { vector, positiveVector, importedReferenceSourceSchema, direction, ids, uniqueBodyIds, curveIds, instanceIds, referenceMeshIds, regionIds, nonzeroDistance, faceRef, edgeRef, curvatureWireSegmentRef, measurementVertexRef, surfaceFaceRefs, curveControlPointRefs, revision, intent, groupSelectionFields, requireNodeSelection, faceQuerySchema, edgeQuerySchema, referenceIdentitySchema, curveSegmentSchema, type JournalEntry, type NamedSelection } from "./server/schemas/common.ts";
-import { compactStatusSummary, isRuntimeState, compactMutationResult, changesOnlyMutationResult, compactSceneSnapshot, compactSceneChanges, compactJournalChange, result } from "./server/results.ts";
-import { fragmentIds, endpointIds, regionOffsets, rebuildCurveInputSchema } from "./server/schemas/curve-edit.ts";
-import { circularEdgeMeasurementRef, sampledCurveEdgeRef, surfaceContinuityInputSchema, edgeCurvatureInputSchema, faceDraftInputSchema, bodyInterferenceInputSchema, solidPropertiesInputSchema, facePropertiesInputSchema, measurementPointRef, topologyMeasurementPointRef } from "./server/schemas/measure.ts";
-import { interiorCurveControlPointRefs } from "./server/schemas/curve-control-points.ts";
-import { fastenerGripLayer, fastenerGroupInspectionInputSchema, fastenerGroupLayoutInputSchema } from "./server/schemas/fasteners.ts";
-import { cylindricalAlignmentInputSchema, vertexAlignmentInputSchema, linearEdgeAlignmentInputSchema } from "./server/schemas/transform.ts";
-import { appearanceMaterialInputSchema } from "./server/schemas/scene.ts";
-import { counterboreInputSchema, counterborePatternInputSchema, throughHoleInputSchema, throughHolePatternInputSchema, blindHoleInputSchema, blindHolePatternInputSchema, countersinkInputSchema, countersinkPatternInputSchema, hexNutPocketInputSchema, hexNutPocketPatternInputSchema, slottedHoleInputSchema, slottedHolePatternInputSchema, heatSetInsertPocketInputSchema, heatSetInsertPocketPatternInputSchema, screwBossInputSchema, screwBossPatternInputSchema, ribInputSchema, roundVentArrayInputSchema, cantileverSnapFitInputSchema, hingeBarrelInputSchema, cableChannelInputSchema, connectorOpeningInputSchema, splitSolidByPlaneInputSchema, splitSolidByPlanesInputSchema, matingEnclosureJointInputSchema, locatingPinPairInputSchema, locatingPinPairPatternInputSchema, splitScrewInsertJointInputSchema, tongueGrooveJointInputSchema, dovetailJointInputSchema } from "./server/schemas/recipes.ts";
-import { splitSolidToVolumeInputSchema, printedExternalThreadInputSchema, printedInternalThreadInputSchema, printedHexNutInputSchema, printedHexScrewInputSchema, printedHexPairInputSchema, printedThreadCalibrationInputSchema } from "./server/schemas/printing.ts";
-import { datumPointDefinitionSchema, datumAxisDefinitionSchema, constructionPlaneDefinitionSchema } from "./server/schemas/construction.ts";
-import { polylineInputSchema, circleInputSchema, twoPointCircleInputSchema, threePointCircleInputSchema, centerArcInputSchema, threePointArcInputSchema, tangentArcInputSchema, tangentCircleInputSchema, bridgeCurveInputSchema, bridgeCurveVerticesInputSchema, ellipseInputSchema, regularPolygonInputSchema, rectangleInputSchema, textInputSchema } from "./server/schemas/sketch.ts";
-import { curveSegmentSampleSchema } from "./server/schemas/curve-query.ts";
-import { bridgeShellEdgesInputSchema } from "./server/schemas/surfaces.ts";
-import { PlasticitySession, type SessionLike, strengthDependenciesForSession } from "./server/session.ts";
-export { PlasticitySession, type SessionLike, strengthDependenciesForSession } from "./server/session.ts";
-import { validatedStepPath, validatedParasolidPath, sha256File, provenanceSafeUrl } from "./server/files.ts";
-import { createToolContext, type ServerOptions } from "./server/context.ts";
-import { registerSessionTools } from "./server/tools/session.ts";
-import { registerFastenersTools } from "./server/tools/fasteners.ts";
-import { registerPrintingTools } from "./server/tools/printing.ts";
-import { registerSelectionTools } from "./server/tools/selection.ts";
-import { registerTransformTools } from "./server/tools/transform.ts";
-import { registerMeasureTools } from "./server/tools/measure.ts";
-import { registerCurveQueryTools } from "./server/tools/curve-query.ts";
-import { registerReferencesTools } from "./server/tools/references.ts";
-import { registerSceneTools } from "./server/tools/scene.ts";
-import { registerConstructionTools } from "./server/tools/construction.ts";
-import { registerSolidsTools } from "./server/tools/solids.ts";
-import { registerRecipesTools } from "./server/tools/recipes.ts";
-import { registerSketchTools } from "./server/tools/sketch.ts";
-import { registerSurfacesTools } from "./server/tools/surfaces.ts";
-import { registerCurveEditTools } from "./server/tools/curve-edit.ts";
-import { registerCurveControlPointsTools } from "./server/tools/curve-control-points.ts";
-import { registerSheetsTools } from "./server/tools/sheets.ts";
-import { registerFacesTools } from "./server/tools/faces.ts";
-import { registerDocumentTools } from "./server/tools/document.ts";
-import { registerExchangeTools } from "./server/tools/exchange.ts";
-
+import { ConstructionHistoryStore } from "../plasticity/construction-history.ts";
+import { StepImportReferenceStore } from "../plasticity/import-reference-store.ts";
+import { StepReferenceDownloader, type StepReferenceDownloaderLike } from "../plasticity/step-reference-downloader.ts";
+import { registerStrengthTools, type StrengthDependencies } from "../strength/mcp.ts";
+import { PrintedThreadQualificationStore } from "../printing/thread-qualification.ts";
+import { type ToolCatalogMode } from "../tool-catalog.ts";
+import { PlasticitySession, type SessionLike } from "./session.ts";
+import { createToolContext, type ServerOptions } from "./context.ts";
+import { registerSessionTools } from "./tools/session.ts";
+import { registerFastenersTools } from "./tools/fasteners.ts";
+import { registerPrintingTools } from "./tools/printing.ts";
+import { registerSelectionTools } from "./tools/selection.ts";
+import { registerTransformTools } from "./tools/transform.ts";
+import { registerMeasureTools } from "./tools/measure.ts";
+import { registerCurveQueryTools } from "./tools/curve-query.ts";
+import { registerReferencesTools } from "./tools/references.ts";
+import { registerSceneTools } from "./tools/scene.ts";
+import { registerConstructionTools } from "./tools/construction.ts";
+import { registerSolidsTools } from "./tools/solids.ts";
+import { registerRecipesTools } from "./tools/recipes.ts";
+import { registerSketchTools } from "./tools/sketch.ts";
+import { registerSurfacesTools } from "./tools/surfaces.ts";
+import { registerCurveEditTools } from "./tools/curve-edit.ts";
+import { registerCurveControlPointsTools } from "./tools/curve-control-points.ts";
+import { registerSheetsTools } from "./tools/sheets.ts";
+import { registerFacesTools } from "./tools/faces.ts";
+import { registerDocumentTools } from "./tools/document.ts";
+import { registerExchangeTools } from "./tools/exchange.ts";
 
 
 export type { ServerOptions };
@@ -100,7 +48,7 @@ export function createCompactServer(...args: Parameters<typeof createServer>): M
   return createServerWithCatalog("compact", ...args);
 }
 
-function createServerWithCatalog(
+export function createServerWithCatalog(
   catalogMode: ToolCatalogMode,
   session: SessionLike = new PlasticitySession(),
   suppliedStrength?: StrengthDependencies,
@@ -203,3 +151,5 @@ Intended use: ${intendedUse ?? "not specified"}. Default units: ${defaultUnits}.
 
   return server;
 }
+
+export { PlasticitySession, type SessionLike, strengthDependenciesForSession } from "./session.ts";

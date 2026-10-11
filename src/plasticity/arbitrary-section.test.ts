@@ -7,7 +7,7 @@ import {
   type NativeArbitrarySectionTopology,
 } from "./arbitrary-section.ts";
 import type { NativeSectionEdge } from "./section-geometry.ts";
-import { PlasticityOperations } from "./operations.ts";
+import { PlasticityOperations } from "./operations/index.ts";
 import type { PlasticityRuntime, RuntimeState } from "./runtime.ts";
 
 const request: ArbitrarySectionRequest = {

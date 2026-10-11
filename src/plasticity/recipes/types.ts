@@ -1,4 +1,4 @@
-import type { PlasticityOperations } from "../operations.ts";
+import type { PlasticityOperations } from "../operations/index.ts";
 
 export type Vector3 = [number, number, number];
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { HeatSetInsertPocketPatternRecipeError, PlasticityRecipes, ScrewBossPatternRecipeError } from "../recipes.ts";
+import { HeatSetInsertPocketPatternRecipeError, PlasticityRecipes, ScrewBossPatternRecipeError } from "./index.ts";
 import { type RecipeOperations, body, counterboreOperations, scene } from "./test-support.ts";
 
 test("heat-set insert pocket creates three concentric cutters and one boolean", async () => {

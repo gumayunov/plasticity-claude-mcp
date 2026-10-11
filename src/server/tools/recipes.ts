@@ -1,4 +1,4 @@
-import { PlasticityRecipes } from "../../plasticity/recipes.ts";
+import { PlasticityRecipes } from "../../plasticity/recipes/index.ts";
 import { SplitSolidByPlaneRecipe } from "../../plasticity/split-solid.ts";
 import { SplitSolidByPlanesRecipe } from "../../plasticity/split-solid-by-planes.ts";
 import { resolveFastenerDesignation } from "../../fasteners/designation.ts";

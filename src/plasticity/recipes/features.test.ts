@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PlasticityRecipes } from "../recipes.ts";
+import { PlasticityRecipes } from "./index.ts";
 import { type RecipeOperations, body, counterboreOperations, scene } from "./test-support.ts";
 
 test("rib creates a closed profile, extrudes its region, and joins the Solid to its support", async () => {

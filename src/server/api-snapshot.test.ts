@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
-import { createCompactServer, createServer, type SessionLike } from "../server.ts";
-import type { PlasticityOperations } from "../plasticity/operations.ts";
+import { createCompactServer, createServer, type SessionLike } from "./index.ts";
+import type { PlasticityOperations } from "../plasticity/operations/index.ts";
 
 const snapshotPath = fileURLToPath(new URL("./api-snapshot.json", import.meta.url));
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BlindHolePatternRecipeError, BlindHoleRecipeError, CounterborePatternRecipeError, CounterboreRecipeError, CountersinkPatternRecipeError, HexNutPocketPatternRecipeError, PlasticityRecipes, SlottedHolePatternRecipeError, SlottedHoleRecipeError, ThroughHolePatternRecipeError, ThroughHoleRecipeError } from "../recipes.ts";
+import { BlindHolePatternRecipeError, BlindHoleRecipeError, CounterborePatternRecipeError, CounterboreRecipeError, CountersinkPatternRecipeError, HexNutPocketPatternRecipeError, PlasticityRecipes, SlottedHolePatternRecipeError, SlottedHoleRecipeError, ThroughHolePatternRecipeError, ThroughHoleRecipeError } from "./index.ts";
 import { type RecipeOperations, body, counterboreOperations, scene, slottedHolePatternOperations } from "./test-support.ts";
 
 test("countersink combines an exact through cutter with a revolved annular cutter", async () => {

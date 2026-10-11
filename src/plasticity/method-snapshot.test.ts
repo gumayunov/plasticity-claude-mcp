@@ -3,8 +3,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { PlasticityOperations } from "./operations.ts";
-import { PlasticityRecipes } from "./recipes.ts";
+import { PlasticityOperations } from "./operations/index.ts";
+import { PlasticityRecipes } from "./recipes/index.ts";
 
 const snapshotPath = fileURLToPath(new URL("./method-snapshot.json", import.meta.url));
 

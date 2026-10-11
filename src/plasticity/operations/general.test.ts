@@ -3,7 +3,7 @@ import { mkdtemp, readFile, realpath, rm, truncate, writeFile } from "node:fs/pr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { PlasticityOperations } from "../operations.ts";
+import { PlasticityOperations } from "./index.ts";
 import { countActiveCurveSpans } from "../curve-span-count.ts";
 import type { PlasticityRuntime, RuntimeState } from "../runtime.ts";
 import { emptyConstruction, testThreeMfArchive } from "./test-support.ts";

@@ -1,4 +1,4 @@
-import { PlasticityRecipes } from "../recipes.ts";
+import { PlasticityRecipes } from "./index.ts";
 import type { RuntimeState } from "../runtime.ts";
 
 export type RecipeOperations = ConstructorParameters<typeof PlasticityRecipes>[0];

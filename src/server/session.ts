@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { discoverPlasticityTargets } from "../cdp/discovery.ts";
 import { diffScenes, type TrackedDatum } from "../plasticity/change-tracker.ts";
-import { PlasticityOperations } from "../plasticity/operations.ts";
+import { PlasticityOperations } from "../plasticity/operations/index.ts";
 import { acquireWindowOwnership, type WindowOwnership } from "../plasticity/ownership.ts";
 import { connectSessionWindow, type SessionConnection } from "../plasticity/session-lifecycle.ts";
 import { PlasticityRuntime, type RuntimeState } from "../plasticity/runtime.ts";

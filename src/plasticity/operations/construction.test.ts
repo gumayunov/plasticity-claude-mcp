@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PlasticityOperations } from "../operations.ts";
+import { PlasticityOperations } from "./index.ts";
 import { frameFromOriginNormalX } from "../construction.ts";
 import type { PlasticityRuntime, RuntimeState } from "../runtime.ts";
 import { constructionOperations, emptyConstruction, planeLocalOperations } from "./test-support.ts";

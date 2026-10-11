@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PlasticityOperations } from "../operations.ts";
+import { PlasticityOperations } from "./index.ts";
 import type { PlasticityRuntime, RuntimeState } from "../runtime.ts";
 import { mutationOutcomeIsUncertain } from "../runtime.ts";
 import { emptyConstruction } from "./test-support.ts";

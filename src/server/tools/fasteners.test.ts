@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { type SessionLike } from "../../server.ts";
-import { PlasticityOperations } from "../../plasticity/operations.ts";
+import { type SessionLike } from "../index.ts";
+import { PlasticityOperations } from "../../plasticity/operations/index.ts";
 import { createServer, unavailableConstruction } from "../test-support.ts";
 
 test("MCP forwards a valid exact fastener-group inspection", async () => {
