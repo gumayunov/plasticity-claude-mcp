@@ -17,6 +17,8 @@ import { isRuntimeState, compactMutationResult, changesOnlyMutationResult, compa
 import { PlasticitySession, type SessionLike, strengthDependenciesForSession } from "./session.ts";
 import { validatedStepPath, validatedParasolidPath, sha256File, provenanceSafeUrl } from "./files.ts";
 import { CompatibilityError } from "../plasticity/compat/errors.ts";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { formatValidationIssues, withNextStep } from "./error-hints.ts";
 
 export type ToolResult = ReturnType<typeof result>;
 export type ToolExtra = {
@@ -62,6 +64,15 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
     : {}), options: ServerOptions = {}) {
   const mutationResult = options.mutationResponses === "changes" ? changesOnlyMutationResult : compactMutationResult;
   const server = new McpServer({ name: "plasticity-mcp", version: "0.2.2" }, { instructions: PLASTICITY_MCP_INSTRUCTIONS });
+  // SDK 1.30 validates tool input before calling the handler; format failures compactly for the model.
+  (server as unknown as {
+    validateToolInput: (tool: { inputSchema?: z.ZodType }, args: unknown, toolName: string) => Promise<unknown>;
+  }).validateToolInput = async (registered, args, toolName) => {
+    if (!registered.inputSchema) return undefined;
+    const parsed = await registered.inputSchema.safeParseAsync(args);
+    if (parsed.success) return parsed.data;
+    throw new McpError(ErrorCode.InvalidParams, formatValidationIssues(toolName, parsed.error.issues));
+  };
   const strength = suppliedStrength ?? strengthDependenciesForSession(session, {
     analysisUnavailableReason: "The isolated analysis provider was not initialized by this server launcher",
   });
@@ -101,8 +112,9 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
     if (input.toolName !== "catalog") {
       const selected = routedTools.get(input.toolName);
       if (!selected || input.toolName === "plasticity_call") throw new Error(`Unknown Plasticity MCP operation: ${input.toolName}`);
-      const parsedArguments = await selected.inputSchema.parseAsync(input.arguments);
-      return await selected.callback(parsedArguments, extra);
+      const parsedArguments = await selected.inputSchema.safeParseAsync(input.arguments);
+      if (!parsedArguments.success) throw new Error(formatValidationIssues(selected.name, parsedArguments.error.issues));
+      return await selected.callback(parsedArguments.data, extra);
     }
 
     const query = input.query?.toLocaleLowerCase();
@@ -199,7 +211,8 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
       return result(await exclusive(() => handler(schema.parse(input) as z.output<T>, extra)));
     } catch (error) {
       if (error instanceof CompatibilityError) throw new Error(`${name}: ${error.message}. Run plasticity_compatibility_report for the full list of affected tools.`);
-      throw error;
+      if (error instanceof z.ZodError) throw new Error(formatValidationIssues(name, error.issues));
+      throw new Error(withNextStep(error instanceof Error ? error.message : String(error)));
     } finally {
       if (progressTimer) clearInterval(progressTimer);
     }
