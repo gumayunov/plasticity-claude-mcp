@@ -1,130 +1,98 @@
-# Plasticity MCP for Claude Code
+# mcp-plasticity
 
-> **Unofficial fork** of [Mesteriis/plasticity-mcp](https://github.com/Mesteriis/plasticity-mcp), reworked for Claude Code. It is not affiliated with or endorsed by the upstream author. The original work is © 2026 Aleksand Meshchriakov under the [MIT License](LICENSE); the changes in this fork are released under the same license.
->
-> What differs from upstream:
->
-> - A Claude Code plugin (`plugins/plasticity-claude`) with a launcher and modeling skills, installed with `npm run setup:claude`.
-> - Isolated analysis and reference search run through `claude -p` by default (`PLASTICITY_ANALYSIS_PROVIDER=claude|codex|none`).
-> - Mutations answer with their change instead of the whole scene; body info and catalog schemas are paged.
-> - `plasticity_save` saves the open document over its own file; opening and backing up large documents use a long timeout; `plasticity_open_document` resets Undo history and the unsaved flag; `plasticity_delete` refuses to remove more than the requested bodies.
-> - Fixes for native memory growth on large documents and for solid and face centroids. Fixes that apply upstream are offered back as pull requests.
+MCP-сервер для [Plasticity](https://www.plasticity.xyz/): ИИ-ассистент (в первую очередь Claude Code) моделирует, измеряет и экспортирует детали в установленном у вас Plasticity — через родные команды CAD, с историей Undo/Redo и точной B-rep-геометрией.
 
-![Plasticity MCP local CAD workflow](docs/assets/workflow.svg)
+Автор: **Куликов Даниил** ([kad-xyz](https://github.com/kad-xyz))
 
-Control Plasticity from an MCP client: inspect and measure native CAD geometry, create and edit models, and export the result. An optional Workbench supports model review, dimensional feedback, and print preparation.
+![Как устроен mcp-plasticity](docs/assets/workflow.svg)
 
-**Runs locally on macOS Apple Silicon with Plasticity 26.1.3.** The MCP server connects to a Plasticity window selected by the user; it cannot run as a standalone cloud CAD service.
+## Что умеет
 
-| CAD workflow | What the server provides |
-| --- | --- |
-| Inspect | Scene state, precise B-rep measurements, and references to bodies, faces, and edges |
-| Model | Native creation and editing with document history, Undo, and Redo |
-| Deliver | Document operations, import/export, and camera screenshots |
-| Review | Optional local Workbench with measurement tables, dimensional feedback, and tablet annotations |
+- **Моделирование родными командами Plasticity**: примитивы, Boolean, скругления и фаски, вытягивание, вращение, sweep и loft, работа с кривыми, поверхностями, гранями и рёбрами, массивы и зеркалирование. Все изменения попадают в историю документа — работает Undo/Redo.
+- **Точные измерения**: габариты, объёмы и площади, расстояния, зазоры, кривизна, уклоны, пересечения тел — по B-rep, а не по сетке.
+- **Готовые конструктивные элементы**: отверстия, зенковки, цековки, карманы под гайки и термовставки, бобышки, рёбра, вентиляционные решётки, защёлки, шарниры, соединения корпусов.
+- **Модель видит результат**: `plasticity_view` возвращает снимки вьюпорта прямо в ответе — с нескольких стандартных видов, с вписыванием только видимых тел; камера и рабочая плоскость пользователя после съёмки восстанавливаются.
+- **Документы и обмен**: открытие и сохранение `.plasticity`, импорт и экспорт STEP, Parasolid, STL, OBJ, 3MF, SVG.
+- **Печать и прочность** (по желанию): ориентация и разрезка под стол принтера, печатные резьбы, проверка крепежа и прочностные оценки.
 
-The server uses Plasticity's own command factories and document history through a loopback-only Electron CDP endpoint. It does not patch or re-sign the application. MCP geometry inputs use millimeters and degrees; native edits support Plasticity Undo and Redo.
+## Требования
 
-## What it provides
+- macOS на Apple Silicon
+- Plasticity 26.1.3 в `/Applications/Plasticity.app` (другие версии — см. «Совместимость»)
+- Node.js 24 или новее
+- Claude Code
 
-- Native Plasticity scene inspection, precise B-rep measurements, and revision-bound references to bodies, faces, and edges.
-- Native CAD creation and editing, document operations, import/export, and camera screenshots.
-- Agent guidance and workflows for image/sketch-driven design, functional clarification, fasteners, and practical strength screening.
-- Optional Workbench for viewing models and measurement tables, submitting validated dimensional feedback, and tablet annotations on the same local network.
-- Optional Creality Print workflow for slicing and print-job preparation. The agent waits for explicit user confirmation before starting a print.
-
-See the [full tool reference](docs/tool-reference.md), [acceptance matrix](docs/acceptance-matrix.md), and [Workbench operations guide](docs/workbench-operations.md) for details and current verification status.
-
-## Requirements
-
-- macOS on Apple Silicon
-- Plasticity 26.1.3 installed at `/Applications/Plasticity.app`
-- Node.js 24 or newer
-- Claude Code (or Codex CLI for the upstream Codex plugin)
-
-This is an early, version-specific project. Live CAD and slicer operations depend on the installed applications and are not covered by mock tests alone. Check the [acceptance matrix](docs/acceptance-matrix.md) before relying on a specific operation.
-
-## Install and run
+## Установка
 
 ```sh
-git clone https://github.com/gumayunov/plasticity-claude-mcp.git
-cd plasticity-claude-mcp
+git clone https://github.com/kad-xyz/mcp-plasticity.git
+cd mcp-plasticity
 npm install
-npm run start:plasticity
-npm run setup:claude
+npm run start:plasticity   # запускает Plasticity с локальным отладочным портом
+npm run setup:claude       # ставит плагин в Claude Code
 ```
 
-`setup:claude` registers this checkout as a local Claude Code plugin marketplace and installs the `plasticity@plasticity` plugin with its skills. It records this checkout's path in a private file under `~/.plasticity-mcp`; the plugin's launcher starts the server from that checkout. Restart Claude Code after installation.
+После `setup:claude` перезапустите Claude Code. Попросите ассистента вызвать `plasticity_list_windows`, затем `plasticity_connect` с нужным окном.
 
-The upstream Codex plugin is still available with `npm run setup:codex`. `setup:codex` adds this GitHub repository as a Codex plugin marketplace and installs the `plasticity-mcp` plugin from Git. It records this checkout's path in a private file under `~/.plasticity-mcp` so the two MCP servers can run the checked-out code and its installed dependencies. No machine-specific paths are committed. Open a new Codex chat after installation.
+`start:plasticity` не закрывает уже запущенный Plasticity: если он открыт без отладочного порта, сохраните работу, закройте его и запустите команду снова. Порт слушает только `127.0.0.1`.
 
-To use the MCP server without the plugin, register it directly instead:
+## Как работать с ассистентом
+
+- **Компактный режим** (по умолчанию): модели сразу видны основные инструменты, остальные — через `plasticity_call` с каталогом (`toolName: "catalog"` и `query`). Каталог ищет по словам, подсказывает ближайшие имена и показывает примеры вызова.
+- **Наборы инструментов**: `plasticity_toolsets` показывает группы (кривые, тела, поверхности, измерения, рецепты…), `plasticity_enable_toolset` открывает группу целиком — клиент получает её инструменты со схемами.
+- **Сценарии**: MCP-промпты `plasticity_new_part`, `plasticity_enclosure`, `plasticity_modify_part`, `plasticity_prepare_print`, `plasticity_inspect` и `plasticity_model_from_reference` задают проверенный порядок работы.
+- **Понятные ошибки**: частые ошибки заканчиваются строкой `Next step:` с конкретным действием, ошибки аргументов — коротким списком полей.
+
+Единицы — миллиметры и градусы. Ссылки на грани и рёбра привязаны к ревизии документа: после каждого изменения их нужно перечитать.
+
+## Совместимость с версиями Plasticity
+
+Сервер определяет версию Plasticity и выбирает профиль совместимости. `plasticity_connect` и `plasticity_diagnose` сообщают версию и статус (`supported` / `untested`).
 
 ```sh
-codex mcp add plasticity -- npm --prefix "$PWD" start
+npm run compat:report -- --isolated   # проверяет, есть ли в установленном Plasticity всё, что нужно серверу
 ```
 
-Ask the agent to call `plasticity_list_windows`, then connect to an explicitly selected window with `plasticity_connect`.
+Отчёт перечисляет отсутствующие фабрики, команды и пути редактора и затронутые инструменты. Процедура переноса на новую версию — в [docs/compat.md](docs/compat.md).
 
-The default MCP catalog shows the core connect, inspection, change-tracking, and screenshot tools plus `plasticity_call`. For any other operation, use `plasticity_call` with `toolName: "catalog"` and a search query to get its name and input schema, then call it through the same dispatcher. The full catalog remains available with `npm run start:full`; existing handlers and validation are the same in both modes.
-
-By default a mutation answers with a paginated scene summary plus the change it made. Pass `--changes-only-responses` to `scripts/run-server.ts` to answer with the change, the new revision and only the scene parts that changed; the Claude Code plugin launcher does this. Live acceptance scripts expect the default summary.
-
-The launcher does not terminate an existing Plasticity process to add MCP access. If it reports that a restart is needed, save your documents, close Plasticity yourself, then rerun the command. CDP listens on loopback only.
-
-### Optional Workbench
-
-The Workbench is not required for chat-based use. Start it on the local machine with:
-
-```sh
-npm run start:workbench
-```
-
-In another terminal on the same Mac, run `npm --workspace workbench run open:owner` to open an authenticated owner session. The server address alone does not grant owner access.
-
-To make it reachable by a tablet on the same private network, run `npm run start:workbench -- --lan`; the server prints its local address. Do not expose it to the public internet. Follow the [Workbench guide](docs/workbench-operations.md) for registration, sharing, backup, and recovery.
-
-## Development
+## Разработка
 
 ```sh
 npm test
 npm run typecheck
 npm --prefix workbench test
 npm --prefix workbench run typecheck
-npm --prefix workbench run build
 ```
 
-Live acceptance checks use a real Plasticity session and can mutate a document. Read the corresponding acceptance guide and explicitly select a disposable test document before running them; they are not part of the default test suite.
+### Живой регрессионный стенд
 
-### Live regression harness
-
-The harness starts a separate Plasticity instance with a temporary profile and runs checks through the real MCP server. It does not touch your Plasticity window or its document; if the main Plasticity process disappears during a run, the harness prints a warning.
+Стенд запускает отдельный экземпляр Plasticity с временным профилем и гоняет проверки через настоящий MCP-сервер. Ваше окно Plasticity и его документы он не трогает: работает только в собственном документе `live-runs/harness-document.plasticity`, а если ваш процесс Plasticity исчезнет во время прогона — выведет предупреждение.
 
 ```sh
-npm run test:live                       # quick tier: 20 key checks, a few seconds
-npm run test:live:full                  # every scripts/verify-*-live.ts, slow
+npm run test:live                       # быстрый уровень: ключевые проверки за несколько секунд
+npm run test:live:full                  # все scripts/verify-*-live.ts, долго
 npm run test:live -- --only box-primitive,fillet-chamfer
-npm run test:live -- --update-baseline  # accept the current run as the baseline
+npm run test:live -- --update-baseline  # принять текущий прогон как эталон
 ```
 
-Results go to `live-runs/<time>-<tier>/`: `report.md` (a table and the changes since the last baseline), `report.json`, `checks/<check>/` (files and logs) and `instance.log`. The baseline is `live-runs/baseline-<tier>.json`; it is only updated by hand and only from a run without failures.
+Результаты — в `live-runs/<время>-<уровень>/`: `report.md` (таблица и изменения относительно эталона), `report.json`, `checks/<проверка>/`, `instance.log`. Эталон `live-runs/baseline-<уровень>.json` обновляется только вручную и только для прогона без ошибок.
 
-Exit codes: `0` — everything passed with no regressions; `1` — failures, regressions or an interrupted run; `2` — the harness could not start.
+Коды возврата: `0` — всё прошло и нет регрессий; `1` — есть падения, регрессии или прогон прерван; `2` — стенд не смог запуститься.
 
-What to know about Plasticity:
+### Workbench (по желанию)
 
-- a new instance opens the start-up or last unsaved document from the shared `~/.plasticity` settings; the harness clears it only in its own temporary instance;
-- checks run in a scratch directory, and their files are then copied into `live-runs/`;
-- the temporary instance is terminated immediately (SIGKILL): otherwise Plasticity stays up with a "save before closing?" dialog, and such a hung instance breaks STEP export in the next one.
+Локальный веб-интерфейс для просмотра модели, таблиц измерений и замечаний с планшета:
 
-## Safety and scope
+```sh
+npm run start:workbench
+npm --workspace workbench run open:owner
+```
 
-- Mutations are serialized and checked against the current document revision; stale references are rejected.
-- After a timeout or lost connection during a mutation, inspect/reconcile the scene before issuing another change.
-- Workbench dimensional inputs are validated in the browser and again on the server.
-- Print submission and starting a print are separate actions; starting requires explicit user confirmation.
-- This project does not replace Plasticity, provide certified engineering analysis, or guarantee printability or part strength. Strength tools are screening calculations whose assumptions and limitations must be reviewed.
+Для доступа с планшета в той же сети — `npm run start:workbench -- --lan`. Не открывайте его в интернет.
 
-## Contributing and support
+## Безопасность и ограничения
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report security issues using the private reporting process in [SECURITY.md](SECURITY.md). See [SUPPORT.md](SUPPORT.md) for bug reports, feature requests, and usage questions. Contributions are released under the [MIT License](LICENSE), with copyright attributed to Aleksand Meshchriakov.
+- Изменения выполняются последовательно и проверяются по ревизии документа; устаревшие ссылки отклоняются.
+- После таймаута или обрыва соединения сначала вызывается `plasticity_reconcile` — повторять или отменять операцию вслепую нельзя.
+- Отправка задания на печать и её запуск — отдельные шаги; запуск только после явного подтверждения пользователя.
+- Прочностные инструменты дают оценочные расчёты, а не сертифицированный инженерный анализ.
