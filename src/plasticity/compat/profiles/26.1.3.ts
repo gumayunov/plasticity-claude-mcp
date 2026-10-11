@@ -1,0 +1,30 @@
+import type { CompatProfile } from "../types.ts";
+
+export const plasticity26_1_3: CompatProfile = {
+  version: "26.1.3",
+  status: "supported",
+  bindingAliases: {},
+  editorPaths: {
+    db: "db",
+    nodes: "db.nodes",
+    groups: "db.groups",
+    empties: "db.empties",
+    dbVersion: "db.version",
+    lookupStableId: "db.lookupStableId",
+    lookupEmptyById: "db.lookupEmptyById",
+    geometryModel: "geo.geometryModel",
+    automatics: "geo.automatics",
+    viewports: "viewports",
+    history: "history",
+    document: "document",
+    getSketchId: "sketches.getSketchId",
+    planesSnapshot: "planes.snapshot",
+    measurementsSnapshot: "measurements.snapshot",
+    measurementsLookupStableId: "measurements.lookupStableId",
+    materialsList: "materials.list",
+    materialsGet: "materials.get",
+    curvesRead: "curves.read",
+    curvesLookup: "curves.lookup",
+  },
+  notes: ["Verified on macOS Apple Silicon with Electron 26.6.9."],
+};
