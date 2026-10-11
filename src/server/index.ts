@@ -8,26 +8,7 @@ import { PrintedThreadQualificationStore } from "../printing/thread-qualificatio
 import { type ToolCatalogMode } from "../tool-catalog.ts";
 import { PlasticitySession, type SessionLike } from "./session.ts";
 import { createToolContext, type ServerOptions } from "./context.ts";
-import { registerSessionTools } from "./tools/session.ts";
-import { registerFastenersTools } from "./tools/fasteners.ts";
-import { registerPrintingTools } from "./tools/printing.ts";
-import { registerSelectionTools } from "./tools/selection.ts";
-import { registerTransformTools } from "./tools/transform.ts";
-import { registerMeasureTools } from "./tools/measure.ts";
-import { registerCurveQueryTools } from "./tools/curve-query.ts";
-import { registerReferencesTools } from "./tools/references.ts";
-import { registerSceneTools } from "./tools/scene.ts";
-import { registerConstructionTools } from "./tools/construction.ts";
-import { registerSolidsTools } from "./tools/solids.ts";
-import { registerRecipesTools } from "./tools/recipes.ts";
-import { registerSketchTools } from "./tools/sketch.ts";
-import { registerSurfacesTools } from "./tools/surfaces.ts";
-import { registerCurveEditTools } from "./tools/curve-edit.ts";
-import { registerCurveControlPointsTools } from "./tools/curve-control-points.ts";
-import { registerSheetsTools } from "./tools/sheets.ts";
-import { registerFacesTools } from "./tools/faces.ts";
-import { registerDocumentTools } from "./tools/document.ts";
-import { registerExchangeTools } from "./tools/exchange.ts";
+import { TOOLSET_REGISTRATIONS } from "./tools/registry.ts";
 
 
 export type { ServerOptions };
@@ -61,26 +42,10 @@ export function createServerWithCatalog(
   options: ServerOptions = {},
 ): McpServer {
   const ctx = createToolContext(catalogMode, session, suppliedStrength, threadQualifications, stepImportReferences, constructionHistory, stepReferenceDownloader, options);
-  registerSessionTools(ctx);
-  registerFastenersTools(ctx);
-  registerPrintingTools(ctx);
-  registerSelectionTools(ctx);
-  registerTransformTools(ctx);
-  registerMeasureTools(ctx);
-  registerCurveQueryTools(ctx);
-  registerReferencesTools(ctx);
-  registerSceneTools(ctx);
-  registerConstructionTools(ctx);
-  registerSolidsTools(ctx);
-  registerRecipesTools(ctx);
-  registerSketchTools(ctx);
-  registerSurfacesTools(ctx);
-  registerCurveEditTools(ctx);
-  registerCurveControlPointsTools(ctx);
-  registerSheetsTools(ctx);
-  registerFacesTools(ctx);
-  registerDocumentTools(ctx);
-  registerExchangeTools(ctx);
+  for (const [toolset, register] of TOOLSET_REGISTRATIONS) {
+    ctx.beginToolset(toolset);
+    register(ctx);
+  }
   const { server, strength } = ctx;
   server.registerPrompt("plasticity_model_from_reference", {
     description: "Guide an agent from a photo or sketch to a verified editable Plasticity model.",
@@ -147,6 +112,7 @@ Intended use: ${intendedUse ?? "not specified"}. Default units: ${defaultUnits}.
     }],
   }));
 
+  ctx.beginToolset("strength");
   registerStrengthTools(server, strength);
 
   return server;

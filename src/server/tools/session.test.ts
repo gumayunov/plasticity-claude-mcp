@@ -36,7 +36,7 @@ test("compact catalog exposes core tools while routing hidden operations through
     "plasticity_call", "plasticity_list_windows", "plasticity_connect", "plasticity_status",
     "plasticity_current_selection", "plasticity_list_bodies", "plasticity_body_info",
     "plasticity_capture_snapshot", "plasticity_changes_since", "plasticity_reconcile",
-    "plasticity_screenshot",
+    "plasticity_screenshot", "plasticity_toolsets", "plasticity_enable_toolset",
   ]));
   assert.equal(listed.tools[0]?.name, "plasticity_call");
 

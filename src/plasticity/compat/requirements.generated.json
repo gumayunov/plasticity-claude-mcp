@@ -1755,6 +1755,11 @@
       ],
       "commands": []
     },
+    "plasticity_enable_toolset": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
     "plasticity_evaluate_curve_segments": {
       "methods": [
         "evaluateCurveSegments"
@@ -3213,6 +3218,11 @@
       "commands": [
         "ThickenSheetCommand"
       ]
+    },
+    "plasticity_toolsets": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
     },
     "plasticity_trim_curve_fragments": {
       "methods": [

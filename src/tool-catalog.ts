@@ -13,6 +13,9 @@ const compactTools = new Set([
   "plasticity_changes_since",
   "plasticity_reconcile",
   "plasticity_screenshot",
+  "plasticity_toolsets",
+  "plasticity_enable_toolset",
+  "plasticity_view",
 ]);
 
 export function exposeDirectTool(mode: ToolCatalogMode, name: string): boolean {

@@ -20,6 +20,8 @@ import { CompatibilityError } from "../plasticity/compat/errors.ts";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { formatValidationIssues, withNextStep } from "./error-hints.ts";
 import { closestNames, rankCatalog } from "./catalog-search.ts";
+import type { RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { TOOLSETS } from "./toolsets.ts";
 
 export type ToolResult = ReturnType<typeof result>;
 export type ToolExtra = {
@@ -46,6 +48,7 @@ export type RoutedTool = {
   annotations: { readOnlyHint: boolean; destructiveHint: boolean; openWorldHint: boolean };
   callback: (input: unknown, extra: ToolExtra) => Promise<ToolResult>;
   toolset: string;
+  registered?: RegisteredTool;
 };
 export type CadReferenceAcquisition = {
   bytes: number;
@@ -90,10 +93,37 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
   };
   const routedTools = new Map<string, RoutedTool>();
   const rawRegisterTool = server.registerTool.bind(server) as unknown as RegisterTool;
+  let currentToolset = "session";
+  const beginToolset = (name: string) => { currentToolset = name; };
   (server as unknown as { registerTool: RegisterTool }).registerTool = (name, config, callback) => {
-    const registered = exposeDirectTool(catalogMode, name) ? rawRegisterTool(name, config, callback) : undefined;
-    routedTools.set(name, { name, description: config.description, inputSchema: config.inputSchema, annotations: config.annotations, callback, toolset: "session" });
+    const registered = rawRegisterTool(name, config, callback) as RegisteredTool;
+    if (!exposeDirectTool(catalogMode, name)) registered.disable();
+    routedTools.set(name, { name, description: config.description, inputSchema: config.inputSchema, annotations: config.annotations, callback, toolset: currentToolset, registered });
     return registered;
+  };
+  const toolsetRows = () => TOOLSETS.map((toolset) => {
+    const members = [...routedTools.values()].filter((entry) => entry.toolset === toolset.name);
+    const size = members.reduce((sum, entry) => sum + entry.description.length + JSON.stringify(z.toJSONSchema(entry.inputSchema, { unrepresentable: "any" })).length, 0);
+    return {
+      name: toolset.name,
+      title: toolset.title,
+      description: toolset.description,
+      toolCount: members.length,
+      approxTokens: Math.round(size / 4),
+      enabled: members.length > 0 && members.every((entry) => entry.registered?.enabled !== false),
+    };
+  });
+  const setToolsetEnabled = (name: string, enabled: boolean) => {
+    if (!TOOLSETS.some((toolset) => toolset.name === name)) {
+      throw new Error(`Unknown toolset ${name}. Available: ${TOOLSETS.map((toolset) => toolset.name).join(", ")}`);
+    }
+    if (catalogMode === "full") return { ...toolsetRows().find((row) => row.name === name)!, note: "All toolsets are always enabled in full mode." };
+    for (const entry of routedTools.values()) {
+      if (entry.toolset !== name || exposeDirectTool(catalogMode, entry.name) || !entry.registered) continue;
+      if (enabled) entry.registered.enable();
+      else entry.registered.disable();
+    }
+    return toolsetRows().find((row) => row.name === name)!;
   };
   const registerTool = server.registerTool.bind(server) as unknown as RegisterTool;
   const plasticityCallSchema = z.object({
@@ -483,7 +513,7 @@ export function createToolContext(catalogMode: ToolCatalogMode, session: Session
     ...(await stepImportReferences.get(id)),
     historical: true as const,
   });
-  return { catalogMode, session, suppliedStrength, threadQualifications, stepImportReferences, constructionHistory, stepReferenceDownloader, server, strength, journal, journalPersistenceWarnings, namedSelections, closeServer, routedTools, rawRegisterTool, registerTool, plasticityCallSchema, toolTail, exclusive, persistJournalEntry, tool, journaled, importCadReference, importStepReference, importParasolidReference, importReferenceThreeMfArtifact, evaluateNamedSelection, sceneChangeInput, importReferenceListInput, listImportReferences, getImportReference };
+  return { catalogMode, session, suppliedStrength, threadQualifications, stepImportReferences, constructionHistory, stepReferenceDownloader, server, strength, journal, journalPersistenceWarnings, namedSelections, closeServer, routedTools, rawRegisterTool, registerTool, plasticityCallSchema, toolTail, exclusive, persistJournalEntry, tool, journaled, importCadReference, importStepReference, importParasolidReference, importReferenceThreeMfArtifact, evaluateNamedSelection, sceneChangeInput, importReferenceListInput, listImportReferences, getImportReference, beginToolset, toolsetRows, setToolsetEnabled };
 }
 
 export type ToolContext = ReturnType<typeof createToolContext>;

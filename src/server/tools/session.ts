@@ -11,7 +11,7 @@ import type { PlasticityOperations } from "../../plasticity/operations/index.ts"
 import type { PlasticityRuntime } from "../../plasticity/runtime.ts";
 
 export function registerSessionTools(ctx: ToolContext): void {
-  const { session, constructionHistory, journal, journalPersistenceWarnings, tool, sceneChangeInput } = ctx;
+  const { session, constructionHistory, journal, journalPersistenceWarnings, tool, sceneChangeInput, toolsetRows, setToolsetEnabled } = ctx;
   const connectedRuntime = (): PlasticityRuntime | undefined => {
     try {
       const runtime = (session.get() as Partial<PlasticityOperations>).runtime as Partial<PlasticityRuntime> | undefined;
@@ -136,4 +136,10 @@ export function registerSessionTools(ctx: ToolContext): void {
   }, true);
   tool("plasticity_reconcile", "Read the document after a timeout or disconnect and allow later mutations without retrying the uncertain command.", z.object({}), async () =>
     await session.get().runtime.reconcile(), true);
+  tool("plasticity_toolsets", "List tool groups (toolsets) with their size and whether their tools are visible to the client. Enable one with plasticity_enable_toolset to see its tools with full schemas; any tool stays callable through plasticity_call.", z.object({}).strict(), async () =>
+    toolsetRows(), true);
+  tool("plasticity_enable_toolset", "Show or hide one toolset's tools in the client's tool list; the server sends tools/list_changed. Hidden tools stay callable through plasticity_call.", z.object({
+    name: z.string().trim().min(1),
+    enabled: z.boolean().default(true),
+  }).strict(), async ({ name, enabled }) => setToolsetEnabled(name, enabled), true);
 }
