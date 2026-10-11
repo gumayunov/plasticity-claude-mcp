@@ -1,4 +1,5 @@
 import type { LiveCheck } from "../types.ts";
+import { compatibilityReport } from "./compat.ts";
 import { connectReadScene } from "./connect.ts";
 import { curveJoin, curveOffset, curveTrim, extrudeRegion, rectangleCircleRegion } from "./curves.ts";
 import { exportStepStl, importStep, saveAndReopen, viewportScreenshot } from "./io.ts";
@@ -8,6 +9,7 @@ import { booleanDifference, booleanUnion, boxPrimitive, cylinderAndSphere } from
 
 export const smokeChecks: LiveCheck[] = [
   connectReadScene,
+  compatibilityReport,
   boxPrimitive,
   cylinderAndSphere,
   booleanUnion,

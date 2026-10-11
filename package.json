@@ -126,7 +126,8 @@
     "typecheck": "tsc --noEmit",
     "test:live": "node scripts/live/run.ts --tier smoke",
     "test:live:full": "node scripts/live/run.ts --tier full",
-    "compat:extract": "node scripts/compat-extract.ts"
+    "compat:extract": "node scripts/compat-extract.ts",
+    "compat:report": "node scripts/compat-report.ts"
   },
   "devDependencies": {
     "@types/node": "24.13.6",
