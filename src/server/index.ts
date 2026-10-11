@@ -9,6 +9,7 @@ import { type ToolCatalogMode } from "../tool-catalog.ts";
 import { PlasticitySession, type SessionLike } from "./session.ts";
 import { createToolContext, type ServerOptions } from "./context.ts";
 import { TOOLSET_REGISTRATIONS } from "./tools/registry.ts";
+import { loadPrompts, registerPrompts } from "./prompts.ts";
 
 
 export type { ServerOptions };
@@ -112,6 +113,7 @@ Intended use: ${intendedUse ?? "not specified"}. Default units: ${defaultUnits}.
     }],
   }));
 
+  registerPrompts(server, loadPrompts());
   ctx.beginToolset("strength");
   registerStrengthTools(server, strength);
 
