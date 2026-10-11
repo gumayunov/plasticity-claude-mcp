@@ -2,6 +2,10 @@ import { CdpClient } from "../cdp/client.ts";
 import type { PlasticityTarget } from "../cdp/discovery.ts";
 import type { ConstructionPlaneDescriptor } from "./construction.ts";
 import { discoverNativeReferences } from "./compat/discovery.ts";
+import { CompatibilityError } from "./compat/errors.ts";
+import { resolveProfile } from "./compat/profiles/index.ts";
+import type { CompatProfile, ResolvedProfile } from "./compat/types.ts";
+import { detectPlasticityVersion } from "./compat/version.ts";
 
 export const NATIVE_STATE_READ_TIMEOUT_MS = 300_000;
 export const LONG_NATIVE_IMPORT_TIMEOUT_MS = 300_000;
@@ -184,12 +188,30 @@ export interface RuntimeState {
   }>;
 }
 
+export interface RuntimeCompatibility {
+  version: string | null;
+  status: "supported" | "untested";
+  profile: string;
+  discoveryStrategy: string;
+  warnings: string[];
+}
+
+export interface CompatibilityProbe {
+  compatibility: RuntimeCompatibility;
+  bindings: string[];
+  commands: string[];
+  missingPaths: string[];
+}
+
 export class PlasticityRuntime {
   private client: CdpClient;
   private readonly target: PlasticityTarget;
   private editorId: string;
   private readonly bindings = new Map<string, string>();
   private discoveryStrategy = "";
+  private resolved: ResolvedProfile = resolveProfile("26.1.3");
+  private version: string | null = null;
+  private versionWarnings: string[] = [];
   private operationTail: Promise<void> = Promise.resolve();
   private uncertain = false;
   private readonly connectClient: (url: string) => Promise<CdpClient>;
@@ -201,17 +223,52 @@ export class PlasticityRuntime {
     this.connectClient = connectClient;
   }
 
-  static async connect(target: PlasticityTarget): Promise<PlasticityRuntime> {
+  static async connect(target: PlasticityTarget, options: { applicationPath?: string } = {}): Promise<PlasticityRuntime> {
     const client = await CdpClient.connect(target.webSocketDebuggerUrl);
     const runtime = new PlasticityRuntime(client, target, "", CdpClient.connect);
     try {
       await client.send("Runtime.enable");
+      const agent = await client.send("Runtime.evaluate", { expression: "navigator.userAgent", returnByValue: true }) as { result?: { value?: unknown } };
+      const detected = await detectPlasticityVersion({
+        applicationPath: options.applicationPath ?? process.env.PLASTICITY_APP_PATH ?? "/Applications/Plasticity.app",
+        userAgent: typeof agent.result?.value === "string" ? agent.result.value : null,
+      });
+      runtime.version = detected.version;
+      runtime.versionWarnings = detected.warnings;
+      runtime.resolved = resolveProfile(detected.version);
       await runtime.refreshNativeReferences();
       return runtime;
     } catch (error) {
       runtime.close();
       throw error;
     }
+  }
+
+
+  getProfile(): CompatProfile {
+    return this.resolved.profile;
+  }
+
+  getCompatibility(): RuntimeCompatibility {
+    const warnings = [...this.versionWarnings];
+    if (this.resolved.status === "untested") {
+      warnings.push(`Plasticity ${this.version ?? "(unknown version)"} is not verified; using profile ${this.resolved.profile.version}. Run plasticity_compatibility_report`);
+    }
+    return { version: this.version, status: this.resolved.status, profile: this.resolved.profile.version, discoveryStrategy: this.discoveryStrategy, warnings };
+  }
+
+  async probeCompatibility(): Promise<CompatibilityProbe> {
+    const result = await this.read<{ commands: string[]; missingPaths: string[] }>(`function (paths) {
+      const missingPaths = [];
+      for (const [name, path] of Object.entries(paths)) {
+        let value = this;
+        for (const key of path.split(".")) value = value === null || value === undefined ? undefined : value[key];
+        if (value === undefined) missingPaths.push(name);
+      }
+      const commands = this.commands ? Object.getOwnPropertyNames(this.commands) : [];
+      return { commands, missingPaths };
+    }`, [this.resolved.profile.editorPaths]);
+    return { compatibility: this.getCompatibility(), bindings: this.getCapabilities(), commands: result.commands.sort(), missingPaths: result.missingPaths };
   }
 
   getCapabilities(): string[] {
@@ -938,8 +995,9 @@ export class PlasticityRuntime {
   private async call<T>(functionDeclaration: string, bindingNames: string[], values: unknown[], timeoutMs?: number): Promise<T> {
     const args: Array<{ objectId?: string; value?: unknown }> = [];
     for (const name of bindingNames) {
-      const objectId = this.bindings.get(name);
-      if (!objectId) throw new Error(`Plasticity native binding is unavailable: ${name}`);
+      const resolvedName = this.resolved.profile.bindingAliases[name] ?? name;
+      const objectId = this.bindings.get(resolvedName);
+      if (!objectId) throw new CompatibilityError({ version: this.version, profile: this.resolved.profile.version, missingBinding: name });
       args.push({ objectId });
     }
     for (const value of values) args.push({ value });
