@@ -23,7 +23,10 @@ test("extracts factories and commands per tool through methods, helpers and reci
       tool("plasticity_create_hole", "d", schema, async () => new PlasticityRecipes(session.get()).createHole());
       for (const name of ["plasticity_measure_a", "plasticity_measure_b"] as const) tool(name, "d", schema, async () => session.get().measure());
     }`);
-    const manifest = extractRequirements({ helpers: [helpers], operations: [operations], recipes: [recipes], tools: [tools] });
+    const orphan = await file("orphan.ts", `export class Importer { run(runtime: any) { return runtime.mutate(\`\${commandStart("ImportCommand")}\`, ["ExchangeImportFactory"]); } }`);
+    const manifest = extractRequirements({ helpers: [helpers], operations: [operations], recipes: [recipes], tools: [tools], all: [helpers, operations, orphan] });
+    assert.deepEqual(manifest.allBindings, ["ExchangeImportFactory", "MeasureFactory", "ThreePointBoxFactory", "Vector3"]);
+    assert.deepEqual(manifest.allCommands, ["BoxCommand", "ImportCommand"]);
     assert.deepEqual(manifest.tools.plasticity_create_box, { methods: ["createBox"], bindings: ["ThreePointBoxFactory", "Vector3"], commands: ["BoxCommand"] });
     assert.deepEqual(manifest.tools.plasticity_create_hole, { methods: ["createBox"], bindings: ["ThreePointBoxFactory", "Vector3"], commands: ["BoxCommand"] });
     assert.deepEqual(manifest.tools.plasticity_measure_b, { methods: ["measure"], bindings: ["MeasureFactory"], commands: [] });

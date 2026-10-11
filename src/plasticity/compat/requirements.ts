@@ -3,7 +3,8 @@ import { join } from "node:path";
 import ts from "typescript";
 
 export interface Requirements { bindings: string[]; commands: string[] }
-export interface RequirementsManifest { tools: Record<string, { methods: string[] } & Requirements> }
+// allBindings/allCommands cover every literal use in the sources, including code the tool mapping cannot trace.
+export interface RequirementsManifest { allBindings: string[]; allCommands: string[]; tools: Record<string, { methods: string[] } & Requirements> }
 
 interface MutableRequirements { bindings: Set<string>; commands: Set<string>; calls: Set<string> }
 
@@ -75,7 +76,7 @@ function toolNames(statement: ts.Statement): string[] {
   return names;
 }
 
-export function extractRequirements(sources: { helpers: string[]; operations: string[]; recipes: string[]; tools: string[] }): RequirementsManifest {
+export function extractRequirements(sources: { helpers: string[]; operations: string[]; recipes: string[]; tools: string[]; all?: string[] }): RequirementsManifest {
   const helpers = helperRequirements(sources.helpers);
   const methods = new Map<string, Requirements>();
   classMethods(sources.operations, (method) => {
@@ -123,7 +124,13 @@ export function extractRequirements(sources: { helpers: string[]; operations: st
     };
     visitStatements(parse(path).statements);
   }
-  return { tools: Object.fromEntries(Object.entries(tools).sort(([a], [b]) => a.localeCompare(b))) };
+  const everything = empty();
+  for (const path of sources.all ?? [...sources.helpers, ...sources.operations, ...sources.recipes, ...sources.tools]) collect(parse(path), everything);
+  return {
+    allBindings: [...everything.bindings].sort(),
+    allCommands: [...everything.commands].sort(),
+    tools: Object.fromEntries(Object.entries(tools).sort(([a], [b]) => a.localeCompare(b))),
+  };
 }
 
 const tsFiles = (directory: string) => readdirSync(directory)
@@ -131,12 +138,21 @@ const tsFiles = (directory: string) => readdirSync(directory)
   .sort()
   .map((name) => join(directory, name));
 
-export function defaultRequirementSources(projectRoot: string): { helpers: string[]; operations: string[]; recipes: string[]; tools: string[] } {
+function allSources(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return allSources(path);
+    return entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts") ? [path] : [];
+  }).sort();
+}
+
+export function defaultRequirementSources(projectRoot: string): { helpers: string[]; operations: string[]; recipes: string[]; tools: string[]; all: string[] } {
   const plasticity = join(projectRoot, "src", "plasticity");
   return {
     helpers: [...tsFiles(plasticity), join(plasticity, "operations", "helpers.ts")],
     operations: tsFiles(join(plasticity, "operations")),
     recipes: tsFiles(join(plasticity, "recipes")),
     tools: tsFiles(join(projectRoot, "src", "server", "tools")),
+    all: allSources(join(projectRoot, "src")),
   };
 }

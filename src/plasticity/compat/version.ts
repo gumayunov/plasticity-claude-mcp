@@ -16,7 +16,7 @@ export function parsePlistVersion(xml: string): string | null {
 }
 
 export function userAgentVersion(userAgent: string): string | null {
-  return /\bPlasticity\/(\d+(?:\.\d+)*)/.exec(userAgent)?.[1] ?? null;
+  return /\bPlasticity\/(\d+(?:\.\d+)*)/i.exec(userAgent)?.[1] ?? null;
 }
 
 export function compareVersions(a: string, b: string): number {
@@ -44,15 +44,16 @@ export async function detectPlasticityVersion(
   input: { applicationPath: string; userAgent: string | null },
   readPlist: (path: string) => Promise<string | null> = readInfoPlistVersion,
 ): Promise<DetectedVersion> {
+  // The running window is authoritative: the app on disk may be a different build than the one running.
   const plistPath = join(input.applicationPath, "Contents", "Info.plist");
-  const fromPlist = await readPlist(plistPath);
   const fromAgent = input.userAgent ? userAgentVersion(input.userAgent) : null;
-  if (fromPlist) {
-    const warnings = fromAgent && fromAgent !== fromPlist
-      ? [`Plasticity version mismatch: Info.plist says ${fromPlist}, renderer user agent says ${fromAgent}`]
+  const fromPlist = await readPlist(plistPath);
+  if (fromAgent) {
+    const warnings = fromPlist && fromPlist !== fromAgent
+      ? [`Plasticity version mismatch: the running window reports ${fromAgent}, ${plistPath} says ${fromPlist}`]
       : [];
-    return { version: fromPlist, source: "info-plist", warnings };
+    return { version: fromAgent, source: "user-agent", warnings };
   }
-  if (fromAgent) return { version: fromAgent, source: "user-agent", warnings: [`Could not read ${plistPath}; using the renderer user agent`] };
-  return { version: null, source: "none", warnings: [`Plasticity version is unknown: ${plistPath} is unreadable and the user agent has no Plasticity/x.y.z`] };
+  if (fromPlist) return { version: fromPlist, source: "info-plist", warnings: [] };
+  return { version: null, source: "none", warnings: [`Plasticity version is unknown: the user agent has no Plasticity/x.y.z and ${plistPath} is unreadable`] };
 }

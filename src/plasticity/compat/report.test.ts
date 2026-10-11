@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { plasticity26_1_3 } from "./profiles/26.1.3.ts";
 import { buildCompatibilityReport, renderCompatibilityMarkdown } from "./report.ts";
 
-const manifest = { tools: {
+const manifest = { allBindings: ["ExchangeImportFactory", "FilletFactory", "ThreePointBoxFactory", "Vector3"], allCommands: ["BoxCommand"], tools: {
   plasticity_create_box: { methods: ["createBox"], bindings: ["ThreePointBoxFactory", "Vector3"], commands: ["BoxCommand"] },
   plasticity_fillet: { methods: ["fillet"], bindings: ["FilletFactory"], commands: [] },
 } };
@@ -12,7 +12,7 @@ const compatibility = { version: "27.0.0", status: "untested" as const, profile:
 
 test("everything present is ok", () => {
   const report = buildCompatibilityReport(
-    { compatibility, bindings: ["ThreePointBoxFactory", "Vector3", "FilletFactory"], commands: ["BoxCommand"], missingPaths: [] },
+    { compatibility, bindings: ["ThreePointBoxFactory", "Vector3", "FilletFactory", "ExchangeImportFactory"], commands: ["BoxCommand"], missingPaths: [] },
     manifest, plasticity26_1_3,
   );
   assert.equal(report.ok, true);
@@ -21,7 +21,7 @@ test("everything present is ok", () => {
 
 test("missing factories, commands and paths list affected tools; aliases are honoured", () => {
   const report = buildCompatibilityReport(
-    { compatibility, bindings: ["BoxFactory3", "Vector3", "ChamferFactory"], commands: [], missingPaths: ["geometryModel"] },
+    { compatibility, bindings: ["BoxFactory3", "Vector3", "ChamferFactory", "ExchangeImportFactory"], commands: [], missingPaths: ["geometryModel"] },
     manifest, { ...plasticity26_1_3, bindingAliases: { ThreePointBoxFactory: "BoxFactory3" } },
   );
   assert.equal(report.ok, false);
@@ -33,4 +33,13 @@ test("missing factories, commands and paths list affected tools; aliases are hon
   const markdown = renderCompatibilityMarkdown(report);
   assert.match(markdown, /# Plasticity compatibility: 27\.0\.0/);
   assert.match(markdown, /FilletFactory.*plasticity_fillet/);
+});
+
+test("bindings used outside the tool mapping are still checked", () => {
+  const report = buildCompatibilityReport(
+    { compatibility, bindings: ["ThreePointBoxFactory", "Vector3", "FilletFactory"], commands: ["BoxCommand"], missingPaths: [] },
+    manifest, plasticity26_1_3,
+  );
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.bindings.missing, [{ name: "ExchangeImportFactory", resolvedAs: "ExchangeImportFactory", tools: [] }]);
 });

@@ -3,6 +3,7 @@ import { ConstructionHistoryStore } from "../../plasticity/construction-history.
 import { compactStatusSummary, isRuntimeState, compactSceneSnapshot, compactSceneChanges } from "../results.ts";
 import type { ToolContext } from "../context.ts";
 import { PROFILES } from "../../plasticity/compat/profiles/index.ts";
+import { probeWindow } from "../../plasticity/compat/probe-window.ts";
 import { buildCompatibilityReport, renderCompatibilityMarkdown } from "../../plasticity/compat/report.ts";
 import type { RequirementsManifest } from "../../plasticity/compat/requirements.ts";
 import requirements from "../../plasticity/compat/requirements.generated.json" with { type: "json" };
@@ -29,10 +30,14 @@ export function registerSessionTools(ctx: ToolContext): void {
     const runtime = connectedRuntime();
     return { ...compactStatusSummary(state, 0, 50), ...(runtime ? { plasticity: runtime.getCompatibility() } : {}) };
   });
-  tool("plasticity_compatibility_report", "Check whether the connected Plasticity version provides every native factory, command and editor path this MCP server uses, and list the tools affected by anything missing. Read-only.", z.object({}), async () => {
+  tool("plasticity_compatibility_report", "Check whether the Plasticity version provides every native factory, command and editor path this MCP server uses, and list the tools affected by anything missing. Uses the connected window, or probes a window directly when plasticity_connect failed (pass targetId if several windows are open). Read-only.", z.object({
+    targetId: z.string().trim().min(1).optional(),
+  }).strict(), async ({ targetId }) => {
     const runtime = connectedRuntime();
-    if (!runtime) throw new Error("Connect to a Plasticity window with plasticity_connect first");
-    const report = buildCompatibilityReport(await runtime.probeCompatibility(), requirements as RequirementsManifest, runtime.getProfile());
+    const { probe, profile } = runtime
+      ? { probe: await runtime.probeCompatibility(), profile: runtime.getProfile() }
+      : await probeWindow(targetId, process.env.PLASTICITY_CDP_URL ?? "http://127.0.0.1:9223");
+    const report = buildCompatibilityReport(probe, requirements as RequirementsManifest, profile);
     return { ...report, markdown: renderCompatibilityMarkdown(report) };
   }, true);
   tool("plasticity_status", "Read a compact document summary with identity, revision, exact body bounds, topology counts, and Undo/Redo state. Body summaries are paginated with bodyOffset/bodyLimit (default 0/50, maximum 200); follow bodyPagination.nextOffset and pass the prior page's revision as expectedRevision so scene edits cannot mix pages. Use plasticity_body_info for exact face/edge/vertex geometry of one body, or plasticity_list_bodies for paginated topology details.", z.object({

@@ -24,6 +24,9 @@ export function buildCompatibilityReport(probe: CompatibilityProbe, manifest: Re
   const commandsPresent = new Set(probe.commands);
   const bindingUsers = usersOf(manifest, "bindings");
   const commandUsers = usersOf(manifest, "commands");
+  // Names used in the sources but not traced to a tool are checked too, with no affected tools listed.
+  for (const name of manifest.allBindings ?? []) if (!bindingUsers.has(name)) bindingUsers.set(name, []);
+  for (const name of manifest.allCommands ?? []) if (!commandUsers.has(name)) commandUsers.set(name, []);
   const missingBindings = [...bindingUsers].sort(([a], [b]) => a.localeCompare(b)).flatMap(([name, tools]) => {
     const resolvedAs = profile.bindingAliases[name] ?? name;
     return present.has(resolvedAs) ? [] : [{ name, resolvedAs, tools: tools.sort() }];

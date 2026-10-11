@@ -14221,11 +14221,17 @@
     },
     {
       "name": "plasticity_compatibility_report",
-      "description": "Check whether the connected Plasticity version provides every native factory, command and editor path this MCP server uses, and list the tools affected by anything missing. Read-only.",
+      "description": "Check whether the Plasticity version provides every native factory, command and editor path this MCP server uses, and list the tools affected by anything missing. Uses the connected window, or probes a window directly when plasticity_connect failed (pass targetId if several windows are open). Read-only.",
       "inputSchema": {
         "type": "object",
-        "properties": {},
-        "$schema": "http://json-schema.org/draft-07/schema#"
+        "properties": {
+          "targetId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
       },
       "annotations": {
         "readOnlyHint": true,

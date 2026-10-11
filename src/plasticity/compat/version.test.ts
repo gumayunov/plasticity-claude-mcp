@@ -26,22 +26,26 @@ test("compareVersions orders numerically", () => {
   assert.ok(compareVersions("27", "26.9.9") > 0);
 });
 
-test("detect prefers Info.plist and warns on user agent mismatch", async () => {
+test("detect prefers the running window's user agent and warns when Info.plist differs", async () => {
   const detected = await detectPlasticityVersion(
     { applicationPath: "/Apps/Plasticity.app", userAgent: "Plasticity/26.2.0 Electron/26" },
     async (path) => { assert.equal(path, "/Apps/Plasticity.app/Contents/Info.plist"); return "26.1.3"; },
   );
   assert.deepEqual(detected, {
-    version: "26.1.3",
-    source: "info-plist",
-    warnings: ["Plasticity version mismatch: Info.plist says 26.1.3, renderer user agent says 26.2.0"],
+    version: "26.2.0",
+    source: "user-agent",
+    warnings: ["Plasticity version mismatch: the running window reports 26.2.0, /Apps/Plasticity.app/Contents/Info.plist says 26.1.3"],
   });
 });
 
-test("detect falls back to the user agent, then to nothing", async () => {
+test("userAgentVersion ignores letter case", () => {
+  assert.equal(userAgentVersion("Mozilla/5.0 plasticity/26.1.3 Electron/26.6.9"), "26.1.3");
+});
+
+test("detect falls back to Info.plist, then to nothing", async () => {
   assert.deepEqual(
-    await detectPlasticityVersion({ applicationPath: "/x.app", userAgent: "Plasticity/26.1.3" }, async () => null),
-    { version: "26.1.3", source: "user-agent", warnings: ["Could not read /x.app/Contents/Info.plist; using the renderer user agent"] },
+    await detectPlasticityVersion({ applicationPath: "/x.app", userAgent: "Mozilla/5.0 Electron/26" }, async () => "26.1.3"),
+    { version: "26.1.3", source: "info-plist", warnings: [] },
   );
   const none = await detectPlasticityVersion({ applicationPath: "/x.app", userAgent: null }, async () => null);
   assert.equal(none.version, null);
