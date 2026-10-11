@@ -1,98 +1,131 @@
-# mcp-plasticity
+<p align="center">
+  <b>English</b> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.de.md">Deutsch</a>
+</p>
 
-MCP-сервер для [Plasticity](https://www.plasticity.xyz/): ИИ-ассистент (в первую очередь Claude Code) моделирует, измеряет и экспортирует детали в установленном у вас Plasticity — через родные команды CAD, с историей Undo/Redo и точной B-rep-геометрией.
+<p align="center">
+  <img src="docs/assets/hero.en.svg" alt="Plasticity MCP: describe a part, AI builds it in Plasticity" width="100%">
+</p>
 
-Автор: **Куликов Даниил** ([kad-xyz](https://github.com/kad-xyz))
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-42d8c0" alt="MIT">
+  <img src="https://img.shields.io/badge/Plasticity-26.1.3-85b9ff" alt="Plasticity 26.1.3">
+  <img src="https://img.shields.io/badge/Node.js-24%2B-42d8c0" alt="Node.js 24+">
+  <img src="https://img.shields.io/badge/MCP-Claude%20Code-85b9ff" alt="MCP · Claude Code">
+</p>
 
-![Как устроен mcp-plasticity](docs/assets/workflow.svg)
+> **Unofficial fork** of [Mesteriis/plasticity-mcp](https://github.com/Mesteriis/plasticity-mcp), reworked for Claude Code. It is not affiliated with or endorsed by the upstream author. The original work is © 2026 Aleksand Meshchriakov under the [MIT License](LICENSE).
 
-## Что умеет
+**Plasticity MCP** turns [Plasticity](https://www.plasticity.xyz/) into a CAD tool an AI assistant can drive. Describe the task in plain words and Claude Code builds the part in your own Plasticity with native commands: exact B-rep geometry, full undo/redo history, measurements and print-ready export. No generated meshes, no blind scripts: the assistant looks at the result and checks the dimensions itself.
 
-- **Моделирование родными командами Plasticity**: примитивы, Boolean, скругления и фаски, вытягивание, вращение, sweep и loft, работа с кривыми, поверхностями, гранями и рёбрами, массивы и зеркалирование. Все изменения попадают в историю документа — работает Undo/Redo.
-- **Точные измерения**: габариты, объёмы и площади, расстояния, зазоры, кривизна, уклоны, пересечения тел — по B-rep, а не по сетке.
-- **Готовые конструктивные элементы**: отверстия, зенковки, цековки, карманы под гайки и термовставки, бобышки, рёбра, вентиляционные решётки, защёлки, шарниры, соединения корпусов.
-- **Модель видит результат**: `plasticity_view` возвращает снимки вьюпорта прямо в ответе — с нескольких стандартных видов, с вписыванием только видимых тел; камера и рабочая плоскость пользователя после съёмки восстанавливаются.
-- **Документы и обмен**: открытие и сохранение `.plasticity`, импорт и экспорт STEP, Parasolid, STL, OBJ, 3MF, SVG.
-- **Печать и прочность** (по желанию): ориентация и разрезка под стол принтера, печатные резьбы, проверка крепежа и прочностные оценки.
+## See it in action
 
-## Требования
+<!-- VIDEO: replace href="#" with the video link (YouTube, or an .mp4 dropped into the GitHub editor) -->
+<table>
+  <tr>
+    <td width="50%"><a href="#"><img src="docs/assets/video-demo.en.svg" alt="Demo: an enclosure from one sentence"></a></td>
+    <td width="50%"><a href="#"><img src="docs/assets/video-setup.en.svg" alt="Setup in 2 minutes"></a></td>
+  </tr>
+</table>
 
-- macOS на Apple Silicon
-- Plasticity 26.1.3 в `/Applications/Plasticity.app` (другие версии — см. «Совместимость»)
-- Node.js 24 или новее
-- Claude Code
+## From a box to an enclosure in four calls
 
-## Установка
+Real Plasticity screenshots: the assistant built this part entirely through the MCP server.
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/assets/screens/step-1-box.jpg" alt="90×60×32 mm blank"></td>
+    <td width="33%"><img src="docs/assets/screens/step-2-shell.jpg" alt="R8 fillets and 2 mm walls"></td>
+    <td width="33%"><img src="docs/assets/screens/enclosure.jpg" alt="M2.5 bosses and vents"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>1.</b> 90×60×32 mm blank</td>
+    <td align="center"><b>2.</b> R8 fillets, 2 mm shell</td>
+    <td align="center"><b>3.</b> 4 M2.5 bosses and 27 vent holes</td>
+  </tr>
+</table>
+
+After each step the assistant calls `plasticity_view` and receives images right in the reply, so it sees the part the way you do:
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screens/enclosure-top.jpg" alt="Top view"></td>
+    <td width="50%"><img src="docs/assets/screens/enclosure-front.jpg" alt="Front view"></td>
+  </tr>
+</table>
+
+## Features
+
+- 🧱 **Native modeling** — primitives, booleans, fillets and chamfers, extrude, revolve, sweep and loft, curves, surfaces, faces and edges, patterns and mirrors. Everything lands in the history, so undo/redo just works.
+- 📐 **Exact measurements** — bounds, volumes, areas, distances, clearances, curvature, draft and body intersections, computed on B-rep rather than meshes.
+- 🔩 **Ready-made features** — holes, countersinks and counterbores, nut and heat-insert pockets, screw bosses, ribs, vents, snap fits, hinges, enclosure joints.
+- 👀 **The assistant sees the result** — viewport images from several views, framing only visible bodies; the user's camera and workplane are restored afterwards.
+- 📦 **Files and exchange** — `.plasticity`, STEP, Parasolid, STL, OBJ, 3MF, SVG.
+- 🖨️ **Printing and strength** — orientation and splitting for the print bed, printable threads, fastener checks, strength estimates.
+
+## How it works
+
+<p align="center"><img src="docs/assets/workflow.en.svg" alt="Claude Code ↔ MCP server ↔ Plasticity" width="100%"></p>
+
+## Quick start
+
+You need macOS on Apple Silicon, Plasticity 26.1.3 in `/Applications`, Node.js 24+ and Claude Code.
 
 ```sh
-git clone https://github.com/kad-xyz/mcp-plasticity.git
-cd mcp-plasticity
+git clone https://github.com/gumayunov/plasticity-claude-mcp.git
+cd plasticity-claude-mcp
 npm install
-npm run start:plasticity   # запускает Plasticity с локальным отладочным портом
-npm run setup:claude       # ставит плагин в Claude Code
+npm run start:plasticity   # Plasticity with a local debugging port (127.0.0.1 only)
+npm run setup:claude       # Claude Code plugin
+npm run setup:codex        # or the upstream Codex plugin
 ```
 
-После `setup:claude` перезапустите Claude Code. Попросите ассистента вызвать `plasticity_list_windows`, затем `plasticity_connect` с нужным окном.
+Restart Claude Code and ask, for example: *"Connect to Plasticity and make a 90×60×32 mm enclosure with 2 mm walls"*.
 
-`start:plasticity` не закрывает уже запущенный Plasticity: если он открыт без отладочного порта, сохраните работу, закройте его и запустите команду снова. Порт слушает только `127.0.0.1`.
+If Plasticity is already open without the debugging port, `start:plasticity` will not close it: save your work, quit the app and run the command again.
 
-## Как работать с ассистентом
+## Working with the assistant
 
-- **Компактный режим** (по умолчанию): модели сразу видны основные инструменты, остальные — через `plasticity_call` с каталогом (`toolName: "catalog"` и `query`). Каталог ищет по словам, подсказывает ближайшие имена и показывает примеры вызова.
-- **Наборы инструментов**: `plasticity_toolsets` показывает группы (кривые, тела, поверхности, измерения, рецепты…), `plasticity_enable_toolset` открывает группу целиком — клиент получает её инструменты со схемами.
-- **Сценарии**: MCP-промпты `plasticity_new_part`, `plasticity_enclosure`, `plasticity_modify_part`, `plasticity_prepare_print`, `plasticity_inspect` и `plasticity_model_from_reference` задают проверенный порядок работы.
-- **Понятные ошибки**: частые ошибки заканчиваются строкой `Next step:` с конкретным действием, ошибки аргументов — коротким списком полей.
+- **Compact mode** (default) — core tools are visible right away; everything else is reachable through `plasticity_call` and a searchable catalog with closest-name suggestions and call examples.
+- **Toolsets** — `plasticity_toolsets` lists the groups and `plasticity_enable_toolset` exposes a whole group.
+- **Workflows** — MCP prompts `plasticity_new_part`, `plasticity_enclosure`, `plasticity_modify_part`, `plasticity_prepare_print`, `plasticity_inspect`, `plasticity_model_from_reference`.
+- **Clear errors** — messages end with a `Next step:` line naming a concrete action; argument errors come as a short list of fields.
 
-Единицы — миллиметры и градусы. Ссылки на грани и рёбра привязаны к ревизии документа: после каждого изменения их нужно перечитать.
+Units are millimetres and degrees. Face and edge references are tied to the document revision.
 
-## Совместимость с версиями Plasticity
+## Compatibility
 
-Сервер определяет версию Plasticity и выбирает профиль совместимости. `plasticity_connect` и `plasticity_diagnose` сообщают версию и статус (`supported` / `untested`).
+The server detects the Plasticity version and picks a compatibility profile. To check that your installed version provides everything the server needs:
 
 ```sh
-npm run compat:report -- --isolated   # проверяет, есть ли в установленном Plasticity всё, что нужно серверу
+npm run compat:report -- --isolated
 ```
 
-Отчёт перечисляет отсутствующие фабрики, команды и пути редактора и затронутые инструменты. Процедура переноса на новую версию — в [docs/compat.md](docs/compat.md).
+Porting to a new version is described in [docs/compat.md](docs/compat.md).
 
-## Разработка
+## Development
 
 ```sh
-npm test
-npm run typecheck
-npm --prefix workbench test
-npm --prefix workbench run typecheck
+npm test && npm run typecheck
+npm run test:live          # live test bench: a separate Plasticity instance, your files stay untouched
+npm run test:live:full     # every live scenario
 ```
 
-### Живой регрессионный стенд
+Reports are saved to `live-runs/<time>-<tier>/`. Exit codes: `0` — all passed, `1` — failures or regressions, `2` — the bench could not start.
 
-Стенд запускает отдельный экземпляр Plasticity с временным профилем и гоняет проверки через настоящий MCP-сервер. Ваше окно Plasticity и его документы он не трогает: работает только в собственном документе `live-runs/harness-document.plasticity`, а если ваш процесс Plasticity исчезнет во время прогона — выведет предупреждение.
+Workbench (optional) is a local web UI for reviewing the model and leaving notes from a tablet: `npm run start:workbench`.
 
-```sh
-npm run test:live                       # быстрый уровень: ключевые проверки за несколько секунд
-npm run test:live:full                  # все scripts/verify-*-live.ts, долго
-npm run test:live -- --only box-primitive,fillet-chamfer
-npm run test:live -- --update-baseline  # принять текущий прогон как эталон
-```
+## Safety
 
-Результаты — в `live-runs/<время>-<уровень>/`: `report.md` (таблица и изменения относительно эталона), `report.json`, `checks/<проверка>/`, `instance.log`. Эталон `live-runs/baseline-<уровень>.json` обновляется только вручную и только для прогона без ошибок.
+- Changes run one at a time and are checked against the document revision; stale references are rejected.
+- After a timeout, call `plasticity_reconcile` first instead of blindly retrying.
+- A print job starts only after explicit confirmation from the user.
+- Strength tools give estimates, not certified engineering analysis.
 
-Коды возврата: `0` — всё прошло и нет регрессий; `1` — есть падения, регрессии или прогон прерван; `2` — стенд не смог запуститься.
+## License
 
-### Workbench (по желанию)
-
-Локальный веб-интерфейс для просмотра модели, таблиц измерений и замечаний с планшета:
-
-```sh
-npm run start:workbench
-npm --workspace workbench run open:owner
-```
-
-Для доступа с планшета в той же сети — `npm run start:workbench -- --lan`. Не открывайте его в интернет.
-
-## Безопасность и ограничения
-
-- Изменения выполняются последовательно и проверяются по ревизии документа; устаревшие ссылки отклоняются.
-- После таймаута или обрыва соединения сначала вызывается `plasticity_reconcile` — повторять или отменять операцию вслепую нельзя.
-- Отправка задания на печать и её запуск — отдельные шаги; запуск только после явного подтверждения пользователя.
-- Прочностные инструменты дают оценочные расчёты, а не сертифицированный инженерный анализ.
+[MIT](LICENSE) © 2026 Aleksand Meshchriakov
