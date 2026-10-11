@@ -16,6 +16,12 @@ export function fakeMcp(handlers: Record<string, FakeHandler>): FakeMcp {
       if (!handler) throw new Error(`Unexpected tool ${tool}`);
       return await handler(args);
     },
+    async callRaw(tool, args) {
+      calls.push({ tool, args });
+      const handler = handlers[tool];
+      if (!handler) throw new Error(`Unexpected tool ${tool}`);
+      return await handler(args);
+    },
     async close() {},
     stderrTail() { return ""; },
   };

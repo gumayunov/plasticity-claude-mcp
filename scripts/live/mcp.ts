@@ -59,6 +59,9 @@ export async function startMcp(options: StartMcpOptions): Promise<McpCaller> {
       const response = await client.callTool({ name: tool, arguments: args }, CallToolResultSchema, { timeout: TOOL_TIMEOUT_MS });
       return parseToolResult(tool, response);
     },
+    async callRaw(tool, args) {
+      return await client.callTool({ name: tool, arguments: args }, CallToolResultSchema, { timeout: TOOL_TIMEOUT_MS });
+    },
     async close() { await client.close(); },
     stderrTail() { return stderr; },
   };

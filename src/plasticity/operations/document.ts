@@ -7,19 +7,25 @@ import { OperationsBase } from "./base.ts";
 
 export type ViewName = "current" | "isometric" | "front" | "back" | "left" | "right" | "top" | "bottom";
 
-// Runs in the renderer: save or restore the first viewport camera so image capture leaves the user's view untouched.
-const CAMERA_SNIPPET = `function (action, saved) {
+// Runs in the renderer: save or restore the first viewport camera and its active construction plane
+// (switching views also switches the workplane), so image capture leaves the user's view untouched.
+export const CAMERA_SNIPPET = `function (action, saved) {
   const viewport = Array.from(this.viewports)[0];
   if (!viewport) throw new Error('Plasticity viewport is unavailable');
   const camera = viewport.camera;
   const target = camera.target ?? viewport.orbitControls?.target;
   if (action === 'save') {
+    this.__mcpViewSavedConstructionPlane = viewport.constructionPlane;
     return { position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), up: camera.up.toArray(), zoom: camera.zoom, target: target?.toArray ? target.toArray() : null };
   }
   camera.position.fromArray(saved.position);
   camera.quaternion.fromArray(saved.quaternion);
   camera.up.fromArray(saved.up);
   camera.zoom = saved.zoom;
+  if (this.__mcpViewSavedConstructionPlane !== undefined) {
+    viewport.constructionPlane = this.__mcpViewSavedConstructionPlane;
+    delete this.__mcpViewSavedConstructionPlane;
+  }
   if (saved.target && target?.fromArray) target.fromArray(saved.target);
   camera.updateProjectionMatrix?.();
   viewport.orbitControls?.update?.();

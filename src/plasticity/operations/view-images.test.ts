@@ -90,3 +90,21 @@ test("the camera is restored when a capture fails", async () => {
   await assert.rejects(new PlasticityOperations(runtime).viewImages(["front", "top"], false, 1024, "png"), /capture failed/);
   assert.deepEqual(log.filter((entry) => entry.startsWith("camera:")), ["camera:save", "camera:restore"]);
 });
+
+test("the camera snippet restores the camera and the active construction plane", async () => {
+  const { CAMERA_SNIPPET } = await import("./document.ts");
+  const vector = (values: number[]) => ({ values: [...values], toArray() { return [...this.values]; }, fromArray(next: number[]) { this.values = [...next]; } });
+  const topPlane = { name: "Top" };
+  const camera = { position: vector([1, 2, 3]), quaternion: vector([0, 0, 0, 1]), up: vector([0, 0, 1]), zoom: 2, target: vector([0, 0, 0]), updateProjectionMatrix() {} };
+  const viewport = { camera, constructionPlane: topPlane, setNeedsRender() {} };
+  const editor = { viewports: new Set([viewport]) };
+  const run = new Function(`return (${CAMERA_SNIPPET});`)() as (action: string, saved: unknown) => unknown;
+  const saved = run.call(editor, "save", null);
+  camera.position.fromArray([9, 9, 9]);
+  camera.zoom = 5;
+  viewport.constructionPlane = { name: "Front" };
+  run.call(editor, "restore", saved);
+  assert.deepEqual(camera.position.toArray(), [1, 2, 3]);
+  assert.equal(camera.zoom, 2);
+  assert.equal(viewport.constructionPlane, topPlane);
+});

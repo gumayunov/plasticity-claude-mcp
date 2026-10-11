@@ -235,7 +235,8 @@
     "unjoinShells",
     "untrimFaces",
     "unwrapFace",
-    "validateBodies"
+    "validateBodies",
+    "viewImages"
   ],
   "PlasticityRecipes": [
     "createBlindHole",

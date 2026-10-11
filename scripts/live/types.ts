@@ -21,6 +21,7 @@ export interface RunReport {
 
 export interface McpCaller {
   call(tool: string, args: Record<string, unknown>): Promise<any>;
+  callRaw(tool: string, args: Record<string, unknown>): Promise<unknown>;
   close(): Promise<void>;
   stderrTail(): string;
 }

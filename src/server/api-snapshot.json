@@ -22428,6 +22428,33 @@
       }
     },
     {
+      "name": "plasticity_enable_toolset",
+      "description": "Show or hide one toolset's tools in the client's tool list; the server sends tools/list_changed. Hidden tools stay callable through plasticity_call.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
       "name": "plasticity_evaluate_curve_segments",
       "description": "Evaluate exact native positions and unit tangents at normalized parameters from 0 to 1 on current Wire segments. Parameters follow each segment's start-to-end direction from plasticity_list_curve_directions. This is read-only and is useful for placing or verifying local curve edits.",
       "inputSchema": {
@@ -43745,6 +43772,21 @@
       }
     },
     {
+      "name": "plasticity_toolsets",
+      "description": "List tool groups (toolsets) with their size and whether their tools are visible to the client. Enable one with plasticity_enable_toolset to see its tools with full schemas; any tool stays callable through plasticity_call.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
       "name": "plasticity_trim_curve_fragments",
       "description": "Remove one or more explicit revision-bound curve fragments using Plasticity's native Trim operation.",
       "inputSchema": {
@@ -48634,6 +48676,61 @@
       }
     },
     {
+      "name": "plasticity_view",
+      "description": "Capture the Plasticity viewport from one or more standard views and return the images directly, so you can check visually what you built. Fitting uses visible bodies only; the user's camera is restored afterwards. Use measurements, not images, for exact dimensions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "views": {
+            "default": [
+              "isometric"
+            ],
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "current",
+                "isometric",
+                "front",
+                "back",
+                "left",
+                "right",
+                "top",
+                "bottom"
+              ]
+            }
+          },
+          "fit": {
+            "default": true,
+            "type": "boolean"
+          },
+          "maxWidth": {
+            "default": 1024,
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 2048
+          },
+          "format": {
+            "default": "jpeg",
+            "type": "string",
+            "enum": [
+              "jpeg",
+              "png"
+            ]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
       "name": "plasticity_wait_for_change",
       "description": "Wait for a reportable scene edit, then return a compact paginated diff. Revision-only advances do not end the wait. Follow bodyPagination.nextOffset with expectedRevision set to current.revision; use plasticity_body_info for detailed topology of selected bodies.",
       "inputSchema": {
@@ -48686,11 +48783,14 @@
     "plasticity_changes_since",
     "plasticity_connect",
     "plasticity_current_selection",
+    "plasticity_enable_toolset",
     "plasticity_list_bodies",
     "plasticity_list_windows",
     "plasticity_reconcile",
     "plasticity_screenshot",
-    "plasticity_status"
+    "plasticity_status",
+    "plasticity_toolsets",
+    "plasticity_view"
   ],
   "compactCatalog": [
     {
@@ -49130,6 +49230,9 @@
     },
     {
       "name": "plasticity_duplicate_curves"
+    },
+    {
+      "name": "plasticity_enable_toolset"
     },
     {
       "name": "plasticity_evaluate_curve_segments"
@@ -49759,6 +49862,9 @@
       "name": "plasticity_thicken_sheets"
     },
     {
+      "name": "plasticity_toolsets"
+    },
+    {
       "name": "plasticity_trim_curve_fragments"
     },
     {
@@ -49805,6 +49911,9 @@
     },
     {
       "name": "plasticity_verify_tongue_root_strength_from_coupon_data"
+    },
+    {
+      "name": "plasticity_view"
     },
     {
       "name": "plasticity_wait_for_change"
