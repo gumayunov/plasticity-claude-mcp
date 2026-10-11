@@ -24,14 +24,21 @@ test("functions stay bound to their parent object", () => {
   assert.equal(run(declaration, editor), "id-5");
 });
 
-test("missing paths are reported together", () => {
-  const declaration = withEditorCompat("function () { return 1; }", { geometryModel: "geo.geometryModel", nodes: "db.nodes", db: "db" });
-  assert.throws(() => run(declaration, { db: {} }), (error: unknown) =>
-    error instanceof Error && error.message === `${MISSING_EDITOR_PATHS_PREFIX}geometryModel=geo.geometryModel, nodes=db.nodes`);
+test("a missing required path fails only when it is used, like a direct property access", () => {
+  const declaration = withEditorCompat("function (useMissing) { return useMissing ? compat.geometryModel : compat.db.version; }", { geometryModel: "geo.geometryModel", db: "db" });
+  assert.equal(run(declaration, { db: { version: 3 } }, false), 3);
+  assert.throws(() => run(declaration, { db: {} }, true), (error: unknown) =>
+    error instanceof Error && error.message === `${MISSING_EDITOR_PATHS_PREFIX}geometryModel=geo.geometryModel`);
 });
 
 test("the parameter list and body of the original function are kept", () => {
   const declaration = withEditorCompat("async function (A, B) {\n  return A + B;\n}", { db: "db" });
   assert.match(declaration, /^async function \(A, B\) \{\n {2}const compat = /);
   assert.match(declaration, /return A \+ B;\n\}$/);
+});
+
+test("optional paths (prefixed with ?) resolve to undefined instead of failing", () => {
+  const declaration = withEditorCompat("function () { return [compat.document, compat.db.x]; }", { document: "?document", db: "db" });
+  assert.deepEqual(run(declaration, { db: { x: 1 } }), [undefined, 1]);
+  assert.deepEqual(run(declaration, { db: { x: 2 }, document: "doc" }), ["doc", 2]);
 });
