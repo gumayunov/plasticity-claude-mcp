@@ -30,11 +30,11 @@ async function listed(server: ReturnType<typeof createServer>) {
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   const { tools } = await client.listTools();
-  const catalog: Array<{ name: string; description?: string }> = [];
+  const catalog: Array<{ name: string; description?: string | undefined }> = [];
   for (let offset = 0; ;) {
     const response = await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", offset, limit: 25 } });
     const page = JSON.parse((response.content as Array<{ text: string }>)[0]!.text);
-    catalog.push(...(page.tools as Array<{ name: string; description?: string }>).map(({ name, description }) => ({ name, description })));
+    catalog.push(...(page.tools as Array<{ name: string; description?: string | undefined }>).map(({ name, description }) => ({ name, description })));
     if (page.nextOffset === null) break;
     offset = page.nextOffset;
   }
