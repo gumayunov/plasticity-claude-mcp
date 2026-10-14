@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { measureSolidProperties, type NativeSolidProperties } from "./solid-properties.ts";
-import { PlasticityOperations } from "./operations.ts";
+import { PlasticityOperations } from "./operations/index.ts";
 import type { PlasticityRuntime, RuntimeState } from "./runtime.ts";
 
 test("returns exact native B-Rep volume, surface area, and volume centroid", async () => {

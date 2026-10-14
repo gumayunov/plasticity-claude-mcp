@@ -12,7 +12,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { StepImportReferenceStore } from "../src/plasticity/import-reference-store.ts";
 import { ConstructionHistoryStore } from "../src/plasticity/construction-history.ts";
 import { StepReferenceDownloader } from "../src/plasticity/step-reference-downloader.ts";
-import { createServer, PlasticitySession } from "../src/server.ts";
+import { createServer, PlasticitySession } from "../src/server/index.ts";
 import type { RuntimeState } from "../src/plasticity/runtime.ts";
 
 const [targetId, requestedOutput] = process.argv.slice(2);

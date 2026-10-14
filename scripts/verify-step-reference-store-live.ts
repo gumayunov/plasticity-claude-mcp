@@ -8,7 +8,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 import { ConstructionHistoryStore } from "../src/plasticity/construction-history.ts";
 import { StepImportReferenceStore } from "../src/plasticity/import-reference-store.ts";
-import { createServer, PlasticitySession } from "../src/server.ts";
+import { createServer, PlasticitySession } from "../src/server/index.ts";
 
 const targetId = process.argv[2];
 if (!targetId) throw new Error("Usage: npm run accept:step-reference-store -- <explicit-Plasticity-target-id>");

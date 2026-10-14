@@ -4,6 +4,18 @@ import type { ReferenceIdentity } from "./references.ts";
 type Body = RuntimeState["bodies"][number];
 type ConstructionPlane = RuntimeState["construction"]["planes"][number];
 type Region = RuntimeState["regions"][number];
+type Group = NonNullable<RuntimeState["groups"]>[number];
+export interface GroupChange {
+  id: number;
+  name: string | null;
+  change: "added" | "removed" | "modified";
+  bodyIdsAdded?: number[];
+  bodyIdsRemoved?: number[];
+  childGroupIdsAdded?: number[];
+  childGroupIdsRemoved?: number[];
+  /** Fields other than the member lists that changed (name, parentId, visible, hidden, locked, instance or mesh members). */
+  otherChanges?: string[];
+}
 export type TrackedDatum = ReferenceIdentity & { kind: "datum-point" | "datum-axis" };
 
 export interface SceneDiff {
@@ -41,6 +53,8 @@ export interface SceneDiff {
   instancesChanged: boolean;
   referenceMeshesChanged: boolean;
   groupsChanged: boolean;
+  /** Per-group member deltas, so callers need not resend the whole group tree after every edit. */
+  groupChanges: GroupChange[];
   staleDatums: Array<TrackedDatum & { reason: "document-changed" | "revision-changed" }>;
 }
 
@@ -122,6 +136,7 @@ export function diffScenes(
   const instancesChanged = JSON.stringify(previous.instances ?? []) !== JSON.stringify(current.instances ?? []);
   const referenceMeshesChanged = JSON.stringify(previous.referenceMeshes ?? []) !== JSON.stringify(current.referenceMeshes ?? []);
   const groupsChanged = previous.activeGroupId !== current.activeGroupId || JSON.stringify(previous.groups ?? []) !== JSON.stringify(current.groups ?? []);
+  const groupChanges = groupsChanged ? diffGroups(documentChanged ? [] : previous.groups ?? [], current.groups ?? []) : [];
   const staleDatums: SceneDiff["staleDatums"] = [];
   for (const datum of trackedDatums) {
     if (datum.documentToken !== previous.documentToken || datum.revision !== previous.revision) continue;
@@ -160,8 +175,43 @@ export function diffScenes(
     instancesChanged,
     referenceMeshesChanged,
     groupsChanged,
+    groupChanges,
     staleDatums,
   };
+}
+
+function diffGroups(previous: readonly Group[], current: readonly Group[]): GroupChange[] {
+  const before = new Map(previous.map((group) => [group.id, group]));
+  const after = new Map(current.map((group) => [group.id, group]));
+  const changes: GroupChange[] = [];
+  for (const group of current) {
+    const old = before.get(group.id);
+    if (!old) {
+      changes.push({ id: group.id, name: group.name, change: "added", ...nonEmpty("bodyIdsAdded", group.bodyIds), ...nonEmpty("childGroupIdsAdded", group.childGroupIds) });
+      continue;
+    }
+    if (JSON.stringify(old) === JSON.stringify(group)) continue;
+    const otherChanges = (["name", "parentId", "visible", "hidden", "locked", "instanceIds", "referenceMeshIds", "otherNodeKeys"] as const)
+      .filter((key) => JSON.stringify(old[key]) !== JSON.stringify(group[key]));
+    changes.push({
+      id: group.id,
+      name: group.name,
+      change: "modified",
+      ...nonEmpty("bodyIdsAdded", group.bodyIds.filter((id) => !old.bodyIds.includes(id))),
+      ...nonEmpty("bodyIdsRemoved", old.bodyIds.filter((id) => !group.bodyIds.includes(id))),
+      ...nonEmpty("childGroupIdsAdded", group.childGroupIds.filter((id) => !old.childGroupIds.includes(id))),
+      ...nonEmpty("childGroupIdsRemoved", old.childGroupIds.filter((id) => !group.childGroupIds.includes(id))),
+      ...(otherChanges.length > 0 ? { otherChanges } : {}),
+    });
+  }
+  for (const group of previous) {
+    if (!after.has(group.id)) changes.push({ id: group.id, name: group.name, change: "removed" });
+  }
+  return changes;
+}
+
+function nonEmpty<K extends string>(key: K, values: readonly number[]): Partial<Record<K, number[]>> {
+  return values.length > 0 ? { [key]: [...values] } as Record<K, number[]> : {};
 }
 
 function planeKey(plane: ConstructionPlane): string {

@@ -147,9 +147,9 @@ test("reads a body version's native topology once and reuses it until the body c
   const client = {
     async send(method: string, params: Record<string, unknown> = {}) {
       assert.equal(method, "Runtime.callFunctionOn");
-      const args = (params.arguments as Array<{ objectId?: string }>).map((arg) => natives[String(arg.objectId)]);
+      const args = (params.arguments as Array<{ objectId?: string; value?: unknown }>).map((arg) => arg.objectId === undefined ? arg.value : natives[arg.objectId]);
       const execute = new Function(`return (${String(params.functionDeclaration)})`)() as (...values: unknown[]) => unknown;
-      return { result: { value: JSON.parse(JSON.stringify(execute.apply(editor, args))) } };
+      return { result: { value: JSON.parse(JSON.stringify(execute.apply(editor, args) ?? null)) } };
     },
     close() {},
   } as unknown as CdpClient;
@@ -199,4 +199,31 @@ test("reads a body version's native topology once and reuses it until the body c
   assert.deepEqual(calls, { FindBox: 5, GetFaces: 5, GetEdges: 5 }, "a reopened document with reused numeric IDs and new views rereads topology");
   assert.equal(reopened.bodies[0]?.materialId, 3);
   assert.equal(reopened.bodies[0]?.visible, false);
+});
+
+test("reads results larger than one CDP message in slices and releases the staged copy", async () => {
+  const payload = { bodies: Array.from({ length: 50 }, (_, id) => ({ id, name: `Body ${id} ±` })) };
+  const responses: number[] = [];
+  const client = {
+    async send(method: string, params: Record<string, unknown> = {}) {
+      assert.equal(method, "Runtime.callFunctionOn");
+      const args = (params.arguments as Array<{ value?: unknown }>).map((arg) => arg.value);
+      const execute = new Function(`return (${String(params.functionDeclaration)})`)() as (...values: unknown[]) => unknown;
+      const value = await execute.apply({ payload }, args);
+      responses.push(JSON.stringify(value ?? null).length);
+      return { result: { value } };
+    },
+    close() {},
+  } as unknown as CdpClient;
+  const RuntimeConstructor = PlasticityRuntime as unknown as new (client: CdpClient, target: { id: string; title: string; webSocketDebuggerUrl: string }, editorId: string) => PlasticityRuntime;
+  const runtime = new RuntimeConstructor(client, { id: "window-1", title: "Part", webSocketDebuggerUrl: "ws://127.0.0.1/devtools/page/1" }, "editor");
+  (runtime as unknown as { chunkedReadSliceChars: number }).chunkedReadSliceChars = 64;
+
+  assert.deepEqual(await runtime.readNativeChunked("function () { return this.payload; }", []), payload);
+  const sliceResponses = responses.slice(1, -1);
+  assert.ok(sliceResponses.length > 10, "expected the result to be fetched in many slices");
+  for (const size of sliceResponses) assert.ok(size <= 64 * 6 + 2, `slice response too large: ${size}`);
+  assert.equal(Object.keys(globalThis).some((key) => key.startsWith("__plasticityMcpChunked_")), false);
+
+  assert.deepEqual(await runtime.readNativeChunked("async function () { return [1, 2, 3]; }", []), [1, 2, 3]);
 });

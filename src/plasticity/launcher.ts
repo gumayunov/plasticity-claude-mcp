@@ -26,7 +26,9 @@ export async function unlockMainProcess(client: InspectorClient, rendererPort: n
     const callFrameId = pause.callFrames?.[0]?.callFrameId;
     if (!callFrameId) throw new Error("Plasticity startup call frame is unavailable");
     const expression = `(() => {
-      const { app } = process.mainModule.require('electron');
+      const load = process.mainModule?.require?.bind(process.mainModule) ?? (typeof require === 'function' ? require : undefined);
+      if (!load) return { patched: false, electron: process.versions.electron, reason: 'no require' };
+      const { app } = load('electron');
       const commandLine = app.commandLine;
       const originalRemoveSwitch = commandLine.removeSwitch.bind(commandLine);
       commandLine.removeSwitch = name => {
@@ -35,15 +37,16 @@ export async function unlockMainProcess(client: InspectorClient, rendererPort: n
       };
       commandLine.appendSwitch('remote-debugging-address', '127.0.0.1');
       commandLine.appendSwitch('remote-debugging-port', '${rendererPort}');
-      return { patched: true, port: commandLine.getSwitchValue('remote-debugging-port') };
+      return { patched: true, port: commandLine.getSwitchValue('remote-debugging-port'), electron: process.versions.electron };
     })()`;
     const evaluation = await client.send("Debugger.evaluateOnCallFrame", {
       callFrameId,
       expression,
       returnByValue: true,
-    }) as { result?: { value?: { patched?: boolean; port?: string } }; exceptionDetails?: unknown };
+    }) as { result?: { value?: { patched?: boolean; port?: string; electron?: string } }; exceptionDetails?: unknown };
     if (evaluation.exceptionDetails || evaluation.result?.value?.patched !== true) {
-      throw new Error("Plasticity rejected the loopback CDP startup hook");
+      const electron = evaluation.result?.value?.electron ?? "unknown";
+      throw new Error(`Plasticity rejected the loopback CDP startup hook (Electron ${electron}). See docs/compat.md`);
     }
     await client.send("Debugger.resume");
   } finally {

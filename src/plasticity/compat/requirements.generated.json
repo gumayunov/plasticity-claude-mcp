@@ -1,0 +1,3320 @@
+{
+  "allBindings": [
+    "ActivateGroupCommand",
+    "BlendShape",
+    "BlendTrim",
+    "BodyExtensionType",
+    "BooleanFactory",
+    "BridgeCurveFactory",
+    "BridgeEdgeCommand",
+    "BridgeEdgeFactory",
+    "BridgeSurfaceWithPreviewFactory",
+    "BridgeVertexCommand",
+    "BridgeVertexFactory",
+    "CapHolesInSheetFactory",
+    "CenterCircleFactory",
+    "ChangeEdgeMethod",
+    "ConstrainedSurfaceFactory",
+    "ConstrainedSurfaceOptimizationType",
+    "ConstructionPlaneDatabase",
+    "ConstructionPlaneSnap",
+    "ContinuityType",
+    "ConvertCommand",
+    "ConvertVertexFactory",
+    "CreateCurveFromEdgesFactory",
+    "CreateCurvesFromRegionsFactory",
+    "CreateInstanceFactory",
+    "CreateSheetFromFacesFactory",
+    "CreateSolidFromFacesFactory",
+    "CurvatureMeasurement",
+    "CurveArrayFactory",
+    "CurveDuplicateFactory",
+    "CurveFactory",
+    "CurveLoftFactory",
+    "CurveType",
+    "CutFactory",
+    "DeformCurveCommand",
+    "DeformCurveFactory",
+    "DeformFaceCommand",
+    "DeformFaceFactory",
+    "DeleteControlPointCommand",
+    "DeleteControlPointFactory",
+    "DeleteEdgeCommand",
+    "DeleteEdgeFactory",
+    "DeleteFaceCommand",
+    "DeleteFaceFactory",
+    "DimensionBlockCommand",
+    "DimensionBlockFactory",
+    "DimensionRadiusCommand",
+    "DimensionRadiusFactory",
+    "DimensionRectangleCommand",
+    "DimensionRectangleFactory",
+    "DissolveFaceCommand",
+    "DissolveFaceFactory",
+    "DissolveGroupCommand",
+    "DraftFaceFactory",
+    "EvalSurfaceContinuityMeasurements_refresh",
+    "ExchangeImportFactory",
+    "ExportCadFactory",
+    "ExportHiddenLineFactory",
+    "ExtendSheetFactory",
+    "ExtensionLimit",
+    "ExtensionShape",
+    "ExtrudeFactory",
+    "FaceLoftFactory",
+    "FilletShellFactory",
+    "FilletVertexFactory",
+    "HollowFacesFactory",
+    "HollowSolidsFactory",
+    "ImportCommand",
+    "ImporterExporter",
+    "ImprintBodyBodyCommand",
+    "ImprintBodyBodyFactory",
+    "ImprintCurveBodyFactory",
+    "InsertKnotCommand",
+    "InsertKnotFactory",
+    "InsertSheetCommand",
+    "InsertSheetFactory",
+    "IsoparamFactory",
+    "JoinCurvesCommand",
+    "JoinCurvesFactory",
+    "JoinSheetsFactory",
+    "KnifeCenterPointArcFactory",
+    "KnifeEllipseFactory",
+    "KnifePolygonFactory",
+    "KnifeThreePointCircleFactory",
+    "KnifeTwoPointCircleFactory",
+    "LineSegmentHelper",
+    "LoftCurvatureType",
+    "LoftEdgeCommand",
+    "LoftSurfaceCommand",
+    "MatchFaceCommand",
+    "MatchFaceFactory",
+    "Matrix4",
+    "MeasureContinuityFactory",
+    "MeshImportFactory",
+    "MirrorFactory",
+    "MoveControlPointCommand",
+    "MoveEdgeCommand",
+    "MoveEdgeFactory",
+    "MoveItemAndEmptyFactory",
+    "MoveSelectionToGroupCommand",
+    "MultiCutFactory",
+    "MultiExtendVertexFactory",
+    "MultiMoveControlPointFactory",
+    "MultiMoveFaceFactory",
+    "MultiPlanarizingBasicScaleFaceFactory",
+    "MultiRotateControlPointFactory",
+    "MultiRotateFaceFactory",
+    "MultiScaleControlPointFactory",
+    "MultiSlideControlPointFactory",
+    "OBJExportFactory",
+    "OffsetEdgeCommand",
+    "OffsetEdgeFactory",
+    "OffsetFaceFactory",
+    "OffsetFaceLoopCommand",
+    "OffsetFaceLoopFactory",
+    "OffsetPlanarCurvesFactory",
+    "OffsetRegionFactory",
+    "OffsetVertexCommand",
+    "OffsetVertexFactory",
+    "ParasolidImportFactory",
+    "PatchHoleInCurveCommand",
+    "PatchHoleInSheetFactory",
+    "PatchHoleInSolidCommand",
+    "PatchHoleInSolidFactory",
+    "PatchHoleInWireFactory",
+    "PatchHolesInSheetCommand",
+    "PatchRegionFactory",
+    "PipeFactory",
+    "PlanarizeCurveFactory",
+    "PointToPointMeasurementFactory",
+    "PossiblyBooleanCylinderFactory",
+    "PossiblyBooleanSphereFactory",
+    "ProjectBodyBodyCommand",
+    "ProjectBodyBodyFactory",
+    "ProjectCurveBodyFactory",
+    "ProjectCurveCurveCommand",
+    "ProjectCurveCurveFactory",
+    "ProjectingScaleItemAndEmptyFactory",
+    "ProjectionCompletionType",
+    "ProjectionMethod",
+    "Quaternion",
+    "RadialArrayFacesCommand",
+    "RadialArrayFacesFactory",
+    "RadialArrayFactory",
+    "RadialMeasurementFactory",
+    "RaiseDegreeCurveCommand",
+    "RaiseDegreeCurveFactory",
+    "RaiseDegreeFaceCommand",
+    "RaiseDegreeFaceFactory",
+    "RealizeInstanceFactory",
+    "RebuildCurveFactory",
+    "RebuildFaceCommand",
+    "RebuildFaceFactory",
+    "RebuildFaceMethod",
+    "RectangularArrayFacesCommand",
+    "RectangularArrayFacesFactory",
+    "RectangularArrayFactory",
+    "RefilletFaceCommand",
+    "RefilletFaceFactory",
+    "RegionLoftFactory",
+    "RemoveFilletsFromShellFactory",
+    "RemoveMeasurementCommand",
+    "RemovePlaneCommand",
+    "ReverseCurveCommand",
+    "ReverseCurveFactory",
+    "ReverseSheetCommand",
+    "ReverseSheetFactory",
+    "RevolveFactory",
+    "RotateControlPointCommand",
+    "RotateItemAndEmptyFactory",
+    "STLExportFactory",
+    "SaveConstructionPlaneCommand",
+    "ScaleControlPointCommand",
+    "SectionAnalysisFactory",
+    "SlotCommand",
+    "SlotFactory",
+    "SpiralFactory",
+    "SplitSegmentCommand",
+    "SplitSegmentFactory",
+    "SubdivideCurveCommand",
+    "SubdivideCurveFactory",
+    "SweepAlignmentType",
+    "SweepCornerType",
+    "SweepFactory",
+    "TangentArcFactory",
+    "TangentCircleCommand",
+    "TangentCircleFactory",
+    "Target",
+    "TextFactory",
+    "ThickenFaceCommand",
+    "ThickenFaceFactory",
+    "ThickenSheetFactory",
+    "ThreeMfExportFactory",
+    "ThreePointBoxFactory",
+    "ThreePointRectangleFactory",
+    "TopologyLandmark",
+    "TrimFactory",
+    "UnjoinCurvesCommand",
+    "UnjoinCurvesFactory",
+    "UnjoinFacesFactory",
+    "UnjoinShellsFactory",
+    "UntrimFactory",
+    "UnwrapFactory",
+    "Vector2",
+    "Vector3",
+    "VectorImportFactory",
+    "cplane2basis",
+    "evalCurvatureMeasurements",
+    "evalSurfaceContinuityMeasurements",
+    "kernel_Sheet",
+    "kernel_Solid",
+    "makeAxisAlignedMeasurementPath",
+    "pk_default"
+  ],
+  "allCommands": [
+    "BooleanCommand",
+    "BridgeSurfaceCommand",
+    "CenterCircleCommand",
+    "CenterPointArcCommand",
+    "ConstrainedSurfaceCommand",
+    "CreateSolidFromFacesCommand",
+    "CurveCommand",
+    "CutCommand",
+    "CylinderCommand",
+    "DraftFaceCommand",
+    "DuplicateEdgeAndProjectCommand",
+    "EllipseCommand",
+    "ExtendCurveCommand",
+    "ExtendSheetCommand",
+    "ExtrudeCommand",
+    "FilletShellCommand",
+    "FilletVertexCommand",
+    "GroupSelectedCommand",
+    "HollowFacesCommand",
+    "HollowSolidsCommand",
+    "ImprintCurveBodyCommand",
+    "JoinSheetsCommand",
+    "LoftCommand",
+    "MirrorCommand",
+    "MoveFaceCommand",
+    "MoveItemCommand",
+    "OffsetFaceCommand",
+    "OffsetPlanarCurveCommand",
+    "OffsetRegionCommand",
+    "PatchCommand",
+    "PipeCommand",
+    "PolygonCommand",
+    "ProjectCurveBodyCommand",
+    "RadialArrayCommand",
+    "RebuildCurveCommand",
+    "RectangularArrayCommand",
+    "RemoveFilletsFromShellCommand",
+    "RevolveCommand",
+    "RotateFaceCommand",
+    "RotateItemCommand",
+    "ScaleFaceCommand",
+    "ScaleItemCommand",
+    "SphereCommand",
+    "SpiralCommand",
+    "SweepCommand",
+    "ThickenSheetCommand",
+    "ThreePointArcCommand",
+    "ThreePointBoxCommand",
+    "ThreePointCircleCommand",
+    "ThreePointRectangleCommand",
+    "TrimCommand",
+    "TwoPointCircleCommand",
+    "UnjoinFacesCommand",
+    "UnjoinShellsCommand"
+  ],
+  "tools": {
+    "plasticity_activate_group": {
+      "methods": [
+        "activateGroup"
+      ],
+      "bindings": [
+        "ActivateGroupCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_align_cylindrical_faces": {
+      "methods": [
+        "alignCylindricalFaces"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory",
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_align_linear_edges": {
+      "methods": [
+        "alignLinearEdges"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory",
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_align_planar_faces": {
+      "methods": [
+        "alignPlanarFaces"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory",
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_align_vertices": {
+      "methods": [
+        "alignVertices"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_analyze_cone_development": {
+      "methods": [
+        "analyzeConeDevelopment"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_analyze_edge_curvature": {
+      "methods": [
+        "analyzeEdgeCurvature"
+      ],
+      "bindings": [
+        "CurvatureMeasurement",
+        "Target",
+        "TopologyLandmark",
+        "evalCurvatureMeasurements"
+      ],
+      "commands": []
+    },
+    "plasticity_analyze_face_draft": {
+      "methods": [
+        "analyzeFaceDraft"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_analyze_surface_continuity": {
+      "methods": [
+        "analyzeSurfaceContinuity"
+      ],
+      "bindings": [
+        "ContinuityType",
+        "EvalSurfaceContinuityMeasurements_refresh",
+        "MeasureContinuityFactory",
+        "evalSurfaceContinuityMeasurements"
+      ],
+      "commands": []
+    },
+    "plasticity_body_info": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_boolean": {
+      "methods": [
+        "boolean"
+      ],
+      "bindings": [
+        "BooleanFactory"
+      ],
+      "commands": [
+        "BooleanCommand"
+      ]
+    },
+    "plasticity_bridge_curve_vertices": {
+      "methods": [
+        "bridgeCurveVertices"
+      ],
+      "bindings": [
+        "BridgeVertexCommand",
+        "BridgeVertexFactory",
+        "ContinuityType"
+      ],
+      "commands": []
+    },
+    "plasticity_bridge_curves": {
+      "methods": [
+        "bridgeCurves"
+      ],
+      "bindings": [
+        "BridgeCurveFactory",
+        "ContinuityType"
+      ],
+      "commands": []
+    },
+    "plasticity_bridge_shell_edges": {
+      "methods": [
+        "bridgeShellEdges"
+      ],
+      "bindings": [
+        "BridgeEdgeCommand",
+        "BridgeEdgeFactory",
+        "ContinuityType"
+      ],
+      "commands": []
+    },
+    "plasticity_bridge_surface": {
+      "methods": [
+        "bridgeSurface"
+      ],
+      "bindings": [
+        "BlendShape",
+        "BlendTrim",
+        "BridgeSurfaceWithPreviewFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "BridgeSurfaceCommand"
+      ]
+    },
+    "plasticity_cap_sheet_holes": {
+      "methods": [
+        "capSheetHoles"
+      ],
+      "bindings": [
+        "CapHolesInSheetFactory",
+        "PatchHolesInSheetCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_capabilities": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_capture_snapshot": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_chamfer": {
+      "methods": [
+        "chamfer"
+      ],
+      "bindings": [
+        "FilletShellFactory"
+      ],
+      "commands": [
+        "FilletShellCommand"
+      ]
+    },
+    "plasticity_changes_since": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_check_fastener_group_layout": {
+      "methods": [
+        "inspectFastenerGroupLayout"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_check_fastener_stack": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_check_interference": {
+      "methods": [
+        "checkInterference"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_compatibility_report": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_connect": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_construction_history": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_construction_journal": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_convert_curve_vertices_to_control_points": {
+      "methods": [
+        "convertCurveVerticesToControlPoints"
+      ],
+      "bindings": [
+        "ConvertCommand",
+        "ConvertVertexFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_blind_hole": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_blind_hole_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_body_intersection_curves": {
+      "methods": [
+        "createBodyIntersectionCurves"
+      ],
+      "bindings": [
+        "ProjectBodyBodyCommand",
+        "ProjectBodyBodyFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_body_outlines": {
+      "methods": [
+        "createBodyOutlines"
+      ],
+      "bindings": [
+        "ConstructionPlaneDatabase"
+      ],
+      "commands": []
+    },
+    "plasticity_create_box": {
+      "methods": [
+        "createBox"
+      ],
+      "bindings": [
+        "ThreePointBoxFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "ThreePointBoxCommand"
+      ]
+    },
+    "plasticity_create_cantilever_snap_fit": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_center_arc": {
+      "methods": [
+        "createCenterArc"
+      ],
+      "bindings": [
+        "KnifeCenterPointArcFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "CenterPointArcCommand"
+      ]
+    },
+    "plasticity_create_circle": {
+      "methods": [
+        "createCircle"
+      ],
+      "bindings": [
+        "CenterCircleFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "CenterCircleCommand"
+      ]
+    },
+    "plasticity_create_cone": {
+      "methods": [
+        "createCone"
+      ],
+      "bindings": [
+        "CurveFactory",
+        "CurveType",
+        "RevolveFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_create_cone_development": {
+      "methods": [
+        "createConeDevelopment"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_connector_opening": {
+      "methods": [
+        "boolean",
+        "createPolyline",
+        "extrudeRegions",
+        "fillet",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "FilletShellFactory",
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "ExtrudeCommand",
+        "FilletShellCommand"
+      ]
+    },
+    "plasticity_create_constrained_surface": {
+      "methods": [
+        "createConstrainedSurface"
+      ],
+      "bindings": [
+        "ConstrainedSurfaceFactory",
+        "ConstrainedSurfaceOptimizationType",
+        "Vector3"
+      ],
+      "commands": [
+        "ConstrainedSurfaceCommand"
+      ]
+    },
+    "plasticity_create_construction_plane": {
+      "methods": [
+        "createConstructionPlane"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_counterbore": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_counterbore_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_countersink": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "createPolyline",
+        "revolveProfile",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "RevolveFactory",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "CylinderCommand",
+        "RevolveCommand"
+      ]
+    },
+    "plasticity_create_countersink_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "createPolyline",
+        "revolveProfile",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "RevolveFactory",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "CylinderCommand",
+        "RevolveCommand"
+      ]
+    },
+    "plasticity_create_curves_from_regions": {
+      "methods": [
+        "createCurvesFromRegions"
+      ],
+      "bindings": [
+        "CreateCurvesFromRegionsFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_cylinder": {
+      "methods": [
+        "createCylinder"
+      ],
+      "bindings": [
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_dovetail_joint": {
+      "methods": [
+        "boolean",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_ellipse": {
+      "methods": [
+        "createEllipse"
+      ],
+      "bindings": [
+        "KnifeEllipseFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "EllipseCommand"
+      ]
+    },
+    "plasticity_create_group": {
+      "methods": [
+        "createGroup"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_heat_set_insert_pocket": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_heat_set_insert_pocket_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_helix": {
+      "methods": [
+        "createHelix"
+      ],
+      "bindings": [
+        "SpiralFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "SpiralCommand"
+      ]
+    },
+    "plasticity_create_hex_nut_pocket": {
+      "methods": [
+        "boolean",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_hex_nut_pocket_pattern": {
+      "methods": [
+        "boolean",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_hinge_barrel": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_instance": {
+      "methods": [
+        "createInstance"
+      ],
+      "bindings": [
+        "CreateInstanceFactory",
+        "MoveItemAndEmptyFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_locating_pin_pair": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_locating_pin_pair_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_mating_enclosure_joint": {
+      "methods": [
+        "boolean",
+        "createBox",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "ThreePointBoxFactory",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "ThreePointBoxCommand"
+      ]
+    },
+    "plasticity_create_nurbs_curve": {
+      "methods": [
+        "createNurbsCurve"
+      ],
+      "bindings": [
+        "CurveFactory",
+        "CurveType",
+        "Vector3"
+      ],
+      "commands": [
+        "CurveCommand"
+      ]
+    },
+    "plasticity_create_pipes": {
+      "methods": [
+        "createPipes"
+      ],
+      "bindings": [
+        "PipeFactory"
+      ],
+      "commands": [
+        "PipeCommand"
+      ]
+    },
+    "plasticity_create_polyline": {
+      "methods": [
+        "createPolyline"
+      ],
+      "bindings": [
+        "CurveFactory",
+        "CurveType",
+        "Vector3"
+      ],
+      "commands": [
+        "CurveCommand"
+      ]
+    },
+    "plasticity_create_printed_external_thread": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_printed_hex_nut": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_printed_hex_pair": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_printed_hex_screw": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_printed_thread_calibration_set": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_create_radius_measurement": {
+      "methods": [
+        "createRadiusMeasurement"
+      ],
+      "bindings": [
+        "RadialMeasurementFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_rectangle": {
+      "methods": [
+        "createRectangle"
+      ],
+      "bindings": [
+        "ThreePointRectangleFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "ThreePointRectangleCommand"
+      ]
+    },
+    "plasticity_create_regular_polygon": {
+      "methods": [
+        "createRegularPolygon"
+      ],
+      "bindings": [
+        "KnifePolygonFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "PolygonCommand"
+      ]
+    },
+    "plasticity_create_rib": {
+      "methods": [
+        "boolean",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_round_vent_array": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "rectangularPattern",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "RectangularArrayFactory",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand",
+        "RectangularArrayCommand"
+      ]
+    },
+    "plasticity_create_screw_boss": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_screw_boss_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_section_analysis": {
+      "methods": [
+        "createSectionAnalysis"
+      ],
+      "bindings": [
+        "Matrix4",
+        "SectionAnalysisFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_create_slot_profiles": {
+      "methods": [
+        "createSlotProfiles"
+      ],
+      "bindings": [
+        "SlotCommand",
+        "SlotFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_slotted_hole": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "CylinderCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_slotted_hole_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "CylinderCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_solid_from_sheet": {
+      "methods": [
+        "createSolidFromSheet"
+      ],
+      "bindings": [
+        "CreateSolidFromFacesFactory"
+      ],
+      "commands": [
+        "CreateSolidFromFacesCommand"
+      ]
+    },
+    "plasticity_create_sphere": {
+      "methods": [
+        "createSphere"
+      ],
+      "bindings": [
+        "PossiblyBooleanSphereFactory"
+      ],
+      "commands": [
+        "SphereCommand"
+      ]
+    },
+    "plasticity_create_split_screw_insert_joint": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_create_tangent_arc": {
+      "methods": [
+        "createTangentArc"
+      ],
+      "bindings": [
+        "TangentArcFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_create_tangent_circle": {
+      "methods": [
+        "createTangentCircle"
+      ],
+      "bindings": [
+        "TangentCircleCommand",
+        "TangentCircleFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_create_text": {
+      "methods": [
+        "createText"
+      ],
+      "bindings": [
+        "Matrix4",
+        "MoveItemAndEmptyFactory",
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "TextFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_create_three_point_arc": {
+      "methods": [
+        "createThreePointArc"
+      ],
+      "bindings": [
+        "KnifeCenterPointArcFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "ThreePointArcCommand"
+      ]
+    },
+    "plasticity_create_three_point_circle": {
+      "methods": [
+        "createThreePointCircle"
+      ],
+      "bindings": [
+        "KnifeThreePointCircleFactory"
+      ],
+      "commands": [
+        "ThreePointCircleCommand"
+      ]
+    },
+    "plasticity_create_through_hole": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_through_hole_pattern": {
+      "methods": [
+        "boolean",
+        "createCylinder",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PossiblyBooleanCylinderFactory",
+        "Quaternion",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CylinderCommand"
+      ]
+    },
+    "plasticity_create_tongue_groove_joint": {
+      "methods": [
+        "boolean",
+        "createPolyline",
+        "extrudeRegions",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "CurveFactory",
+        "CurveType",
+        "ExtrudeFactory",
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "CurveCommand",
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_create_topology_distance_measurement": {
+      "methods": [
+        "createTopologyDistanceMeasurement"
+      ],
+      "bindings": [
+        "PointToPointMeasurementFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_create_torus": {
+      "methods": [
+        "createTorus"
+      ],
+      "bindings": [
+        "CenterCircleFactory",
+        "Quaternion",
+        "RevolveFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_create_two_point_circle": {
+      "methods": [
+        "createTwoPointCircle"
+      ],
+      "bindings": [
+        "KnifeTwoPointCircleFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "TwoPointCircleCommand"
+      ]
+    },
+    "plasticity_create_vertex_distance_measurement": {
+      "methods": [
+        "createVertexDistanceMeasurement"
+      ],
+      "bindings": [
+        "PointToPointMeasurementFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_current_selection": {
+      "methods": [
+        "selection"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_curve_pattern": {
+      "methods": [
+        "curvePattern"
+      ],
+      "bindings": [
+        "CurveArrayFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_cut_cable_channel": {
+      "methods": [
+        "boolean",
+        "createPipes",
+        "state"
+      ],
+      "bindings": [
+        "BooleanFactory",
+        "LineSegmentHelper",
+        "PipeFactory",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": [
+        "BooleanCommand",
+        "PipeCommand"
+      ]
+    },
+    "plasticity_cut_printed_internal_thread": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_cut_with_faces": {
+      "methods": [
+        "cutWithFaces"
+      ],
+      "bindings": [
+        "MultiCutFactory"
+      ],
+      "commands": [
+        "CutCommand"
+      ]
+    },
+    "plasticity_define_datum_axis": {
+      "methods": [
+        "defineDatumAxis"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_define_datum_point": {
+      "methods": [
+        "defineDatumPoint"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_deform_bodies_between_faces": {
+      "methods": [
+        "deformBodiesBetweenFaces"
+      ],
+      "bindings": [
+        "DeformFaceCommand",
+        "DeformFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_deform_curves_between_faces": {
+      "methods": [
+        "deformCurvesBetweenFaces"
+      ],
+      "bindings": [
+        "DeformCurveCommand",
+        "DeformCurveFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_delete": {
+      "methods": [
+        "remove"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_delete_curve_control_points": {
+      "methods": [
+        "deleteCurveControlPoints"
+      ],
+      "bindings": [
+        "DeleteControlPointCommand",
+        "DeleteControlPointFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_delete_edges": {
+      "methods": [
+        "deleteEdges"
+      ],
+      "bindings": [
+        "DeleteEdgeCommand",
+        "DeleteEdgeFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_delete_faces": {
+      "methods": [
+        "deleteFaces"
+      ],
+      "bindings": [
+        "DeleteFaceCommand",
+        "DeleteFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_delete_instances": {
+      "methods": [
+        "deleteInstances"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_delete_measurement": {
+      "methods": [
+        "deleteMeasurement"
+      ],
+      "bindings": [
+        "RemoveMeasurementCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_delete_named_selection": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_delete_reference_meshes": {
+      "methods": [
+        "deleteReferenceMeshes"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_delete_section_analysis": {
+      "methods": [
+        "deleteSectionAnalysis"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_diagnose": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_dissolve_faces": {
+      "methods": [
+        "dissolveFaces"
+      ],
+      "bindings": [
+        "DissolveFaceCommand",
+        "DissolveFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_dissolve_groups": {
+      "methods": [
+        "dissolveGroups"
+      ],
+      "bindings": [
+        "DissolveGroupCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_download_and_import_parasolid": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_download_and_import_reference_3mf": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_download_and_import_reference_mesh": {
+      "methods": [
+        "importReferenceMesh",
+        "state"
+      ],
+      "bindings": [
+        "ImportCommand",
+        "LineSegmentHelper",
+        "MeshImportFactory",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_download_and_import_step": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_draft_faces": {
+      "methods": [
+        "draftFaces"
+      ],
+      "bindings": [
+        "DraftFaceFactory"
+      ],
+      "commands": [
+        "DraftFaceCommand"
+      ]
+    },
+    "plasticity_duplicate_bodies": {
+      "methods": [
+        "duplicateBodies"
+      ],
+      "bindings": [
+        "CreateInstanceFactory",
+        "MoveItemAndEmptyFactory",
+        "RealizeInstanceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_duplicate_curves": {
+      "methods": [
+        "duplicateCurves"
+      ],
+      "bindings": [
+        "CurveDuplicateFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_enable_toolset": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_evaluate_curve_segments": {
+      "methods": [
+        "evaluateCurveSegments"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_export_3mf": {
+      "methods": [
+        "export3mf"
+      ],
+      "bindings": [
+        "ThreeMfExportFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_export_hiddenline_svg": {
+      "methods": [
+        "exportHiddenLineSvg"
+      ],
+      "bindings": [
+        "ExportHiddenLineFactory",
+        "Vector2"
+      ],
+      "commands": []
+    },
+    "plasticity_export_obj": {
+      "methods": [
+        "exportObj"
+      ],
+      "bindings": [
+        "OBJExportFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_export_parasolid": {
+      "methods": [
+        "exportParasolid"
+      ],
+      "bindings": [
+        "ExportCadFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_export_step": {
+      "methods": [
+        "exportStep"
+      ],
+      "bindings": [
+        "ExportCadFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_export_stl": {
+      "methods": [
+        "exportStl"
+      ],
+      "bindings": [
+        "STLExportFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_export_svg": {
+      "methods": [
+        "exportSvg"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_extend_curve_endpoints": {
+      "methods": [
+        "extendCurveEndpoints"
+      ],
+      "bindings": [
+        "MultiExtendVertexFactory"
+      ],
+      "commands": [
+        "ExtendCurveCommand"
+      ]
+    },
+    "plasticity_extend_sheet_edges": {
+      "methods": [
+        "extendSheetEdges"
+      ],
+      "bindings": [
+        "BodyExtensionType",
+        "ExtendSheetFactory",
+        "ExtensionLimit",
+        "ExtensionShape"
+      ],
+      "commands": [
+        "ExtendSheetCommand"
+      ]
+    },
+    "plasticity_extract_edges": {
+      "methods": [
+        "extractEdges"
+      ],
+      "bindings": [
+        "CreateCurveFromEdgesFactory"
+      ],
+      "commands": [
+        "DuplicateEdgeAndProjectCommand"
+      ]
+    },
+    "plasticity_extract_faces": {
+      "methods": [
+        "extractFaces"
+      ],
+      "bindings": [
+        "CreateSheetFromFacesFactory"
+      ],
+      "commands": [
+        "CreateSolidFromFacesCommand"
+      ]
+    },
+    "plasticity_extrude_faces": {
+      "methods": [
+        "extrudeFaces"
+      ],
+      "bindings": [
+        "ExtrudeFactory"
+      ],
+      "commands": [
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_extrude_profile": {
+      "methods": [
+        "extrudeProfile"
+      ],
+      "bindings": [
+        "ExtrudeFactory"
+      ],
+      "commands": [
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_extrude_regions": {
+      "methods": [
+        "extrudeRegions"
+      ],
+      "bindings": [
+        "ExtrudeFactory"
+      ],
+      "commands": [
+        "ExtrudeCommand"
+      ]
+    },
+    "plasticity_fillet": {
+      "methods": [
+        "fillet"
+      ],
+      "bindings": [
+        "FilletShellFactory"
+      ],
+      "commands": [
+        "FilletShellCommand"
+      ]
+    },
+    "plasticity_fillet_curve_vertices": {
+      "methods": [
+        "filletCurveVertices"
+      ],
+      "bindings": [
+        "FilletVertexFactory"
+      ],
+      "commands": [
+        "FilletVertexCommand"
+      ]
+    },
+    "plasticity_find_edges": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_find_faces": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_get_cad_reference_import": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_get_step_import": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_hollow_faces": {
+      "methods": [
+        "hollowFaces"
+      ],
+      "bindings": [
+        "HollowFacesFactory"
+      ],
+      "commands": [
+        "HollowFacesCommand"
+      ]
+    },
+    "plasticity_hollow_solids": {
+      "methods": [
+        "hollowSolids"
+      ],
+      "bindings": [
+        "HollowSolidsFactory"
+      ],
+      "commands": [
+        "HollowSolidsCommand"
+      ]
+    },
+    "plasticity_import_parasolid": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_import_reference_3mf": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_import_reference_mesh": {
+      "methods": [
+        "importReferenceMesh"
+      ],
+      "bindings": [
+        "ImportCommand",
+        "MeshImportFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_import_step": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_import_svg": {
+      "methods": [
+        "importSvg"
+      ],
+      "bindings": [
+        "ImportCommand",
+        "VectorImportFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_imprint_bodies": {
+      "methods": [
+        "imprintBodies"
+      ],
+      "bindings": [
+        "ImprintBodyBodyCommand",
+        "ImprintBodyBodyFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_imprint_curves_on_body": {
+      "methods": [
+        "imprintCurvesOnBody"
+      ],
+      "bindings": [
+        "ImprintCurveBodyFactory",
+        "ProjectionCompletionType",
+        "ProjectionMethod",
+        "Vector3"
+      ],
+      "commands": [
+        "ImprintCurveBodyCommand"
+      ]
+    },
+    "plasticity_insert_curve_knot": {
+      "methods": [
+        "insertCurveKnot"
+      ],
+      "bindings": [
+        "InsertKnotCommand",
+        "InsertKnotFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_insert_isoparam_edges": {
+      "methods": [
+        "insertIsoparamEdges"
+      ],
+      "bindings": [
+        "IsoparamFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_insert_sheet": {
+      "methods": [
+        "insertSheet"
+      ],
+      "bindings": [
+        "InsertSheetCommand",
+        "InsertSheetFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_inspect_curve_planarity": {
+      "methods": [
+        "inspectCurvePlanarity"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_inspect_curve_structure": {
+      "methods": [
+        "inspectCurveStructure"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_inspect_fastener_group": {
+      "methods": [
+        "inspectFastenerGroup"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_inspect_surface_structure": {
+      "methods": [
+        "inspectSurfaceStructure"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_join_curves": {
+      "methods": [
+        "joinCurves"
+      ],
+      "bindings": [
+        "JoinCurvesCommand",
+        "JoinCurvesFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_join_sheets": {
+      "methods": [
+        "joinSheets"
+      ],
+      "bindings": [
+        "JoinSheetsFactory"
+      ],
+      "commands": [
+        "JoinSheetsCommand"
+      ]
+    },
+    "plasticity_list_appearance_materials": {
+      "methods": [
+        "listAppearanceMaterials"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_bodies": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_list_cad_reference_imports": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_construction_geometry": {
+      "methods": [
+        "listConstructionGeometry"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_curve_control_points": {
+      "methods": [
+        "listCurveControlPoints"
+      ],
+      "bindings": [
+        "MultiSlideControlPointFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_list_curve_directions": {
+      "methods": [
+        "listCurveDirections"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_curve_endpoints": {
+      "methods": [
+        "listCurveEndpoints"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_curve_fragments": {
+      "methods": [
+        "listCurveFragments"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_curve_intersections": {
+      "methods": [
+        "listCurveIntersections"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_curve_vertices": {
+      "methods": [
+        "listCurveVertices"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_groups": {
+      "methods": [
+        "listGroups"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_instances": {
+      "methods": [
+        "listInstances"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_measurements": {
+      "methods": [
+        "listMeasurements"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_named_selections": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_list_printed_thread_qualifications": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_reference_assets": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_reference_meshes": {
+      "methods": [
+        "listReferenceMeshes"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_regions": {
+      "methods": [
+        "listRegions"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_section_analyses": {
+      "methods": [
+        "listSectionAnalyses"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_step_imports": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_list_windows": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_loft_curves": {
+      "methods": [
+        "loftCurves"
+      ],
+      "bindings": [
+        "CurveLoftFactory",
+        "LoftCurvatureType",
+        "LoftEdgeCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_loft_faces": {
+      "methods": [
+        "loftFaces"
+      ],
+      "bindings": [
+        "FaceLoftFactory",
+        "LoftCurvatureType",
+        "LoftSurfaceCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_loft_regions": {
+      "methods": [
+        "loftRegions"
+      ],
+      "bindings": [
+        "RegionLoftFactory"
+      ],
+      "commands": [
+        "LoftCommand"
+      ]
+    },
+    "plasticity_match_faces": {
+      "methods": [
+        "matchFaces"
+      ],
+      "bindings": [
+        "MatchFaceCommand",
+        "MatchFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_match_printed_thread_qualification": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_measure_face_properties": {
+      "methods": [
+        "measureFaceProperties"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_fastener_grip_stack": {
+      "methods": [
+        "measureFastenerGripStack"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_linear_edges": {
+      "methods": [
+        "measureLinearEdges"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_nonparallel_planar_polygon_clearance": {
+      "methods": [
+        "measureNonparallelPlanarPolygonFaceClearance"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_parallel_planar_face_clearance": {
+      "methods": [
+        "measureParallelPlanarFaceClearance"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_planar_faces": {
+      "methods": [
+        "measurePlanarFaces"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_point_distance": {
+      "methods": [
+        "measurePointDistance"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_point_to_circular_edge": {
+      "methods": [
+        "measurePointToCircularEdge"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_point_to_curved_edge": {
+      "methods": [
+        "measurePointToSampledCurveEdge"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_point_to_linear_edge": {
+      "methods": [
+        "measurePointToLinearEdge"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_point_to_planar_face": {
+      "methods": [
+        "measurePointToPlanarFace"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_measure_solid_properties": {
+      "methods": [
+        "measureSolidProperties"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_mirror": {
+      "methods": [
+        "mirror"
+      ],
+      "bindings": [
+        "MirrorFactory"
+      ],
+      "commands": [
+        "MirrorCommand"
+      ]
+    },
+    "plasticity_move": {
+      "methods": [
+        "move"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory"
+      ],
+      "commands": [
+        "MoveItemCommand"
+      ]
+    },
+    "plasticity_move_curve_control_points": {
+      "methods": [
+        "moveCurveControlPoints"
+      ],
+      "bindings": [
+        "MoveControlPointCommand",
+        "MultiMoveControlPointFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_move_edges": {
+      "methods": [
+        "moveEdges"
+      ],
+      "bindings": [
+        "MoveEdgeCommand",
+        "MoveEdgeFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_move_faces": {
+      "methods": [
+        "moveFaces"
+      ],
+      "bindings": [
+        "MultiMoveFaceFactory"
+      ],
+      "commands": [
+        "MoveFaceCommand"
+      ]
+    },
+    "plasticity_move_instances": {
+      "methods": [
+        "moveInstances"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory"
+      ],
+      "commands": [
+        "MoveItemCommand"
+      ]
+    },
+    "plasticity_move_reference_meshes": {
+      "methods": [
+        "moveReferenceMeshes"
+      ],
+      "bindings": [
+        "MoveItemAndEmptyFactory"
+      ],
+      "commands": [
+        "MoveItemCommand"
+      ]
+    },
+    "plasticity_move_to_group": {
+      "methods": [
+        "moveToGroup"
+      ],
+      "bindings": [
+        "MoveSelectionToGroupCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_offset_edges": {
+      "methods": [
+        "offsetEdges"
+      ],
+      "bindings": [
+        "OffsetEdgeCommand",
+        "OffsetEdgeFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_offset_face_loops": {
+      "methods": [
+        "offsetFaceLoops"
+      ],
+      "bindings": [
+        "OffsetFaceLoopCommand",
+        "OffsetFaceLoopFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_offset_faces": {
+      "methods": [
+        "offsetFaces"
+      ],
+      "bindings": [
+        "OffsetFaceFactory"
+      ],
+      "commands": [
+        "OffsetFaceCommand"
+      ]
+    },
+    "plasticity_offset_planar_curves": {
+      "methods": [
+        "offsetPlanarCurves"
+      ],
+      "bindings": [
+        "OffsetPlanarCurvesFactory"
+      ],
+      "commands": [
+        "OffsetPlanarCurveCommand"
+      ]
+    },
+    "plasticity_offset_regions": {
+      "methods": [
+        "offsetRegions"
+      ],
+      "bindings": [
+        "OffsetRegionFactory"
+      ],
+      "commands": [
+        "OffsetRegionCommand"
+      ]
+    },
+    "plasticity_offset_vertices": {
+      "methods": [
+        "offsetVertices"
+      ],
+      "bindings": [
+        "OffsetVertexCommand",
+        "OffsetVertexFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_open_document": {
+      "methods": [
+        "openDocument"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_orient_bodies_for_print": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_patch_closed_wires": {
+      "methods": [
+        "patchClosedWires"
+      ],
+      "bindings": [
+        "PatchHoleInCurveCommand",
+        "PatchHoleInWireFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_patch_regions": {
+      "methods": [
+        "patchRegions"
+      ],
+      "bindings": [
+        "PatchRegionFactory"
+      ],
+      "commands": [
+        "PatchCommand"
+      ]
+    },
+    "plasticity_patch_sheet_hole": {
+      "methods": [
+        "patchSheetHole"
+      ],
+      "bindings": [
+        "PatchHoleInSheetFactory"
+      ],
+      "commands": [
+        "PatchCommand"
+      ]
+    },
+    "plasticity_patch_solid_edge_loops": {
+      "methods": [
+        "patchSolidEdgeLoops"
+      ],
+      "bindings": [
+        "PatchHoleInSolidCommand",
+        "PatchHoleInSolidFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_planarize_curves": {
+      "methods": [
+        "planarizeCurves"
+      ],
+      "bindings": [
+        "DeformCurveCommand",
+        "PlanarizeCurveFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_project_curve_pair": {
+      "methods": [
+        "projectCurvePair"
+      ],
+      "bindings": [
+        "ProjectCurveCurveCommand",
+        "ProjectCurveCurveFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_project_curves_onto_body": {
+      "methods": [
+        "projectCurvesOntoBody"
+      ],
+      "bindings": [
+        "ProjectCurveBodyFactory",
+        "ProjectionCompletionType",
+        "ProjectionMethod",
+        "Vector3"
+      ],
+      "commands": [
+        "ProjectCurveBodyCommand"
+      ]
+    },
+    "plasticity_radial_face_pattern": {
+      "methods": [
+        "radialFacePattern"
+      ],
+      "bindings": [
+        "RadialArrayFacesCommand",
+        "RadialArrayFacesFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_radial_pattern": {
+      "methods": [
+        "radialPattern"
+      ],
+      "bindings": [
+        "RadialArrayFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "RadialArrayCommand"
+      ]
+    },
+    "plasticity_raise_curve_degree": {
+      "methods": [
+        "raiseCurveDegree"
+      ],
+      "bindings": [
+        "RaiseDegreeCurveCommand",
+        "RaiseDegreeCurveFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_raise_surface_degree": {
+      "methods": [
+        "raiseSurfaceDegree"
+      ],
+      "bindings": [
+        "RaiseDegreeFaceCommand",
+        "RaiseDegreeFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_realize_instances": {
+      "methods": [
+        "realizeInstances"
+      ],
+      "bindings": [
+        "RealizeInstanceFactory"
+      ],
+      "commands": [
+        "GroupSelectedCommand"
+      ]
+    },
+    "plasticity_rebuild_curves": {
+      "methods": [
+        "rebuildCurves"
+      ],
+      "bindings": [
+        "RebuildCurveFactory"
+      ],
+      "commands": [
+        "RebuildCurveCommand"
+      ]
+    },
+    "plasticity_rebuild_face": {
+      "methods": [
+        "rebuildFace"
+      ],
+      "bindings": [
+        "ChangeEdgeMethod",
+        "RebuildFaceCommand",
+        "RebuildFaceFactory",
+        "RebuildFaceMethod"
+      ],
+      "commands": []
+    },
+    "plasticity_reconcile": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_record_printed_thread_qualification": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_rectangular_face_pattern": {
+      "methods": [
+        "rectangularFacePattern"
+      ],
+      "bindings": [
+        "RectangularArrayFacesCommand",
+        "RectangularArrayFacesFactory",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_rectangular_pattern": {
+      "methods": [
+        "rectangularPattern"
+      ],
+      "bindings": [
+        "RectangularArrayFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "RectangularArrayCommand"
+      ]
+    },
+    "plasticity_redo": {
+      "methods": [
+        "redo"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_refillet_faces": {
+      "methods": [
+        "refilletFaces"
+      ],
+      "bindings": [
+        "RefilletFaceCommand",
+        "RefilletFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_refresh_datum": {
+      "methods": [
+        "refreshDatum"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_remove_construction_plane": {
+      "methods": [
+        "removeConstructionPlane"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_remove_fillets": {
+      "methods": [
+        "removeFillets"
+      ],
+      "bindings": [
+        "RemoveFilletsFromShellFactory"
+      ],
+      "commands": [
+        "RemoveFilletsFromShellCommand"
+      ]
+    },
+    "plasticity_rename": {
+      "methods": [
+        "rename"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_rename_group": {
+      "methods": [
+        "renameGroup"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_rename_reference_mesh": {
+      "methods": [
+        "renameReferenceMesh"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_resolve_fastener_designation": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_reverse_curves": {
+      "methods": [
+        "reverseCurves"
+      ],
+      "bindings": [
+        "ReverseCurveCommand",
+        "ReverseCurveFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_reverse_sheets": {
+      "methods": [
+        "reverseSheets"
+      ],
+      "bindings": [
+        "ReverseSheetCommand",
+        "ReverseSheetFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_revolve_profile": {
+      "methods": [
+        "revolveProfile"
+      ],
+      "bindings": [
+        "RevolveFactory"
+      ],
+      "commands": [
+        "RevolveCommand"
+      ]
+    },
+    "plasticity_rotate": {
+      "methods": [
+        "rotate"
+      ],
+      "bindings": [
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "RotateItemCommand"
+      ]
+    },
+    "plasticity_rotate_curve_control_points": {
+      "methods": [
+        "rotateCurveControlPoints"
+      ],
+      "bindings": [
+        "MultiRotateControlPointFactory",
+        "Quaternion",
+        "RotateControlPointCommand",
+        "Vector3"
+      ],
+      "commands": []
+    },
+    "plasticity_rotate_faces": {
+      "methods": [
+        "rotateFaces"
+      ],
+      "bindings": [
+        "MultiRotateFaceFactory",
+        "Quaternion",
+        "Vector3"
+      ],
+      "commands": [
+        "RotateFaceCommand"
+      ]
+    },
+    "plasticity_rotate_instances": {
+      "methods": [
+        "rotateInstances"
+      ],
+      "bindings": [
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "RotateItemCommand"
+      ]
+    },
+    "plasticity_rotate_reference_meshes": {
+      "methods": [
+        "rotateReferenceMeshes"
+      ],
+      "bindings": [
+        "Quaternion",
+        "RotateItemAndEmptyFactory",
+        "Vector3"
+      ],
+      "commands": [
+        "RotateItemCommand"
+      ]
+    },
+    "plasticity_save": {
+      "methods": [
+        "saveDocument"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_save_copy": {
+      "methods": [
+        "saveCopy"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_save_named_selection": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_scale": {
+      "methods": [
+        "scale"
+      ],
+      "bindings": [
+        "ProjectingScaleItemAndEmptyFactory"
+      ],
+      "commands": [
+        "ScaleItemCommand"
+      ]
+    },
+    "plasticity_scale_curve_control_points": {
+      "methods": [
+        "scaleCurveControlPoints"
+      ],
+      "bindings": [
+        "MultiScaleControlPointFactory",
+        "ScaleControlPointCommand"
+      ],
+      "commands": []
+    },
+    "plasticity_scale_faces": {
+      "methods": [
+        "scaleFaces"
+      ],
+      "bindings": [
+        "MultiPlanarizingBasicScaleFaceFactory"
+      ],
+      "commands": [
+        "ScaleFaceCommand"
+      ]
+    },
+    "plasticity_scale_instances": {
+      "methods": [
+        "scaleInstances"
+      ],
+      "bindings": [
+        "ProjectingScaleItemAndEmptyFactory"
+      ],
+      "commands": [
+        "ScaleItemCommand"
+      ]
+    },
+    "plasticity_scale_reference_meshes": {
+      "methods": [
+        "scaleReferenceMeshes"
+      ],
+      "bindings": [
+        "ProjectingScaleItemAndEmptyFactory"
+      ],
+      "commands": [
+        "ScaleItemCommand"
+      ]
+    },
+    "plasticity_screenshot": {
+      "methods": [
+        "screenshot"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_bodies": {
+      "methods": [
+        "selectBodies"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_curve_control_points": {
+      "methods": [
+        "selectCurveControlPoints"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_curves": {
+      "methods": [
+        "selectCurves"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_edges": {
+      "methods": [
+        "selectEdges"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_faces": {
+      "methods": [
+        "selectFaces"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_nodes": {
+      "methods": [
+        "selectNodes"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_select_reference_meshes": {
+      "methods": [
+        "selectReferenceMeshes"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_set_appearance_material": {
+      "methods": [
+        "setAppearanceMaterial"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_set_block_dimensions": {
+      "methods": [
+        "setBlockDimensions"
+      ],
+      "bindings": [
+        "DimensionBlockCommand",
+        "DimensionBlockFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_set_locked": {
+      "methods": [
+        "setNodeLocked"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_set_radius_dimension": {
+      "methods": [
+        "setRadiusDimension"
+      ],
+      "bindings": [
+        "DimensionRadiusCommand",
+        "DimensionRadiusFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_set_rectangle_dimensions": {
+      "methods": [
+        "setRectangleDimensions"
+      ],
+      "bindings": [
+        "DimensionRectangleCommand",
+        "DimensionRectangleFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_set_view": {
+      "methods": [
+        "setView"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_set_visibility": {
+      "methods": [
+        "setNodeVisibility"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_set_workplane": {
+      "methods": [
+        "setConstructionWorkplane"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_slide_curve_control_points": {
+      "methods": [
+        "slideCurveControlPoints"
+      ],
+      "bindings": [
+        "MoveControlPointCommand",
+        "MultiSlideControlPointFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_split_curve_segment": {
+      "methods": [
+        "splitCurveSegment"
+      ],
+      "bindings": [
+        "SplitSegmentCommand",
+        "SplitSegmentFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_split_solid_by_plane": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_split_solid_by_planes": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_split_solid_to_build_volume": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_status": {
+      "methods": [
+        "state"
+      ],
+      "bindings": [
+        "LineSegmentHelper",
+        "Vector2",
+        "Vector3",
+        "makeAxisAlignedMeasurementPath"
+      ],
+      "commands": []
+    },
+    "plasticity_subdivide_curves": {
+      "methods": [
+        "subdivideCurves"
+      ],
+      "bindings": [
+        "SubdivideCurveCommand",
+        "SubdivideCurveFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_sweep_regions": {
+      "methods": [
+        "sweepRegions"
+      ],
+      "bindings": [
+        "SweepAlignmentType",
+        "SweepCornerType",
+        "SweepFactory"
+      ],
+      "commands": [
+        "SweepCommand"
+      ]
+    },
+    "plasticity_thicken_faces": {
+      "methods": [
+        "thickenFaces"
+      ],
+      "bindings": [
+        "ThickenFaceCommand",
+        "ThickenFaceFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_thicken_sheets": {
+      "methods": [
+        "thickenSheets"
+      ],
+      "bindings": [
+        "ThickenSheetFactory"
+      ],
+      "commands": [
+        "ThickenSheetCommand"
+      ]
+    },
+    "plasticity_toolsets": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_trim_curve_fragments": {
+      "methods": [
+        "trimCurveFragments"
+      ],
+      "bindings": [
+        "TrimFactory"
+      ],
+      "commands": [
+        "TrimCommand"
+      ]
+    },
+    "plasticity_undo": {
+      "methods": [
+        "undo"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_unjoin_curves": {
+      "methods": [
+        "unjoinCurves"
+      ],
+      "bindings": [
+        "UnjoinCurvesCommand",
+        "UnjoinCurvesFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_unjoin_faces": {
+      "methods": [
+        "unjoinFaces"
+      ],
+      "bindings": [
+        "UnjoinFacesFactory"
+      ],
+      "commands": [
+        "UnjoinFacesCommand"
+      ]
+    },
+    "plasticity_unjoin_shells": {
+      "methods": [
+        "unjoinShells"
+      ],
+      "bindings": [
+        "UnjoinShellsFactory"
+      ],
+      "commands": [
+        "UnjoinShellsCommand"
+      ]
+    },
+    "plasticity_untrim_faces": {
+      "methods": [
+        "untrimFaces"
+      ],
+      "bindings": [
+        "UntrimFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_unwrap_face": {
+      "methods": [
+        "unwrapFace"
+      ],
+      "bindings": [
+        "UnwrapFactory"
+      ],
+      "commands": []
+    },
+    "plasticity_validate_bodies": {
+      "methods": [
+        "validateBodies"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_view": {
+      "methods": [
+        "viewImages"
+      ],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_wait_for_change": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    },
+    "plasticity_write_project_brief": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
+    }
+  }
+}

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-labelledby="title">
+  <title id="title">Plasticity MCP — ИИ-ассистент моделирует в вашем Plasticity родными командами CAD</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1320"/><stop offset=".55" stop-color="#10233a"/><stop offset="1" stop-color="#1a1840"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#42d8c0"/><stop offset="1" stop-color="#85b9ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#42d8c0" stop-opacity=".30"/><stop offset="1" stop-color="#42d8c0" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#3a5470" stroke-opacity=".22"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#85b9ff"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="400" rx="24" fill="url(#bg)"/>
+  <rect width="1200" height="400" rx="24" fill="url(#grid)"/>
+  <rect x="1" y="1" width="1198" height="398" rx="23" fill="none" stroke="#4b6678" stroke-opacity=".5"/>
+  <g font-family="-apple-system, 'SF Pro Display', 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans', 'Noto Sans CJK SC', 'Noto Sans JP', 'Microsoft YaHei', sans-serif" fill="#e6f1f8">
+    <text x="60" y="62" font-size="26" font-weight="700">Plasticity MCP</text>
+    <text x="60" y="92" font-size="16" fill="#9fb6c6">ИИ-ассистент моделирует в вашем Plasticity родными командами CAD</text>
+    
+    <rect x="60" y="140" width="280" height="130" rx="16" fill="#102233" stroke="url(#accent)" stroke-width="2"/>
+    <text x="200" y="185" font-size="20" font-weight="600" text-anchor="middle">Claude Code</text>
+    <text x="200" y="215" font-size="14" fill="#9fb6c6" text-anchor="middle">задача обычными словами,</text>
+    <text x="200" y="237" font-size="14" fill="#9fb6c6" text-anchor="middle">снимки модели в ответах</text>
+    
+    <rect x="460" y="140" width="280" height="130" rx="16" fill="#102233" stroke="url(#accent)" stroke-width="2"/>
+    <text x="600" y="185" font-size="20" font-weight="600" text-anchor="middle">MCP-сервер</text>
+    <text x="600" y="215" font-size="14" fill="#9fb6c6" text-anchor="middle">инструменты, наборы, промпты,</text>
+    <text x="600" y="237" font-size="14" fill="#9fb6c6" text-anchor="middle">профили версий Plasticity</text>
+    
+    <rect x="860" y="140" width="280" height="130" rx="16" fill="#102233" stroke="url(#accent)" stroke-width="2"/>
+    <text x="1000" y="185" font-size="20" font-weight="600" text-anchor="middle">Plasticity</text>
+    <text x="1000" y="215" font-size="14" fill="#9fb6c6" text-anchor="middle">точная B-rep-геометрия,</text>
+    <text x="1000" y="237" font-size="14" fill="#9fb6c6" text-anchor="middle">история Undo / Redo</text>
+    <line x1="342" y1="205" x2="456" y2="205" stroke="#85b9ff" stroke-width="2.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+    <text x="399" y="192" font-size="13" fill="#42d8c0" text-anchor="middle">stdio</text>
+    <line x1="742" y1="205" x2="856" y2="205" stroke="#85b9ff" stroke-width="2.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+    <text x="799" y="192" font-size="13" fill="#42d8c0" text-anchor="middle">CDP · 127.0.0.1</text>
+    <rect x="460" y="310" width="680" height="54" rx="12" fill="#0f1d2b" stroke="#4b6678"/>
+    <text x="800" y="343" font-size="14" fill="#c7d8e4" text-anchor="middle">npm run test:live — живой стенд  ·  npm run compat:report — проверка версии</text>
+    <line x1="600" y1="308" x2="600" y2="274" stroke="#4b6678" stroke-width="2" stroke-dasharray="5 5"/>
+    <line x1="1000" y1="308" x2="1000" y2="274" stroke="#4b6678" stroke-width="2" stroke-dasharray="5 5"/>
+  </g>
+</svg>

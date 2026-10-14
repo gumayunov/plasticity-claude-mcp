@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { discoverPlasticityTargets, type PlasticityTarget } from "../src/cdp/discovery.ts";
-import { PlasticityOperations } from "../src/plasticity/operations.ts";
+import { PlasticityOperations } from "../src/plasticity/operations/index.ts";
 import { PlasticityRuntime, type RuntimeState } from "../src/plasticity/runtime.ts";
 
 const REQUIRED_BINDINGS = ["CurveFactory", "CenterCircleFactory", "ExtrudeFactory", "Vector3", "Quaternion"] as const;

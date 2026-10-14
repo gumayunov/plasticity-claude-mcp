@@ -1,6 +1,6 @@
 ---
 name: plasticity-documents
-description: Use when opening, inspecting or exporting an existing Plasticity document or assembly through the plasticity MCP server - large files, nested groups, hidden bodies, linked or mirrored instances, exporting many bodies to STL or STEP, saving, plasticity_open_document timeouts, "snapshot(): scratch active" errors, or Plasticity getting slow or using a lot of memory.
+description: Use when opening, inspecting or exporting an existing Plasticity document or assembly through the plasticity MCP server, or writing its project brief (Name.md next to the file) - large files, nested groups, hidden bodies, linked or mirrored instances, exporting many bodies to STL or STEP, saving, plasticity_open_document timeouts, "snapshot(): scratch active" errors, or Plasticity getting slow or using a lot of memory.
 ---
 
 # Working with Plasticity documents
@@ -9,9 +9,24 @@ Session basics (connect, revisions, catalog) are in `plasticity-modeling`.
 
 ## Which document is open
 
-- No MCP response contains the open file's path: `documentToken` is an id, and the window title shows at most the file name.
+- `plasticity_connect` returns `projectBrief.path` when `Name.md` sits next to the open `Name.plasticity`. Other responses do not contain the file's path: `documentToken` is an id, and the window title shows at most the file name.
 - Plasticity reopens the last document on start. To work on a known file, open it explicitly: `plasticity_open_document` with `path`, a new `backupPath` in a temporary directory (the current document, unsaved changes included, is written there first), `intent` and `revision`.
 - A large file keeps loading for about a minute after the window looks ready. If the call times out, do not call it again: `plasticity_reconcile`, then check the body count. Retrying opens the file twice.
+
+## Project brief
+
+- The brief is `Name.md` next to `Name.plasticity`, with pictures in `Name.assets/`. When `plasticity_connect` returns `projectBrief`, read it before editing: it records which side is front, how parts are made or bought, decisions the user made and the open issues.
+- Write it with `plasticity_write_project_brief`:
+  - `summary`;
+  - `conventions` (axes, front, transforms);
+  - one section per assembly (`id`, `title`, `description`, `bodyIds` or `groupIds`);
+  - `openIssues`;
+  - `language` for the generated headings.
+- Each section's pictures show only its bodies: the other bodies are hidden in the renderer for the capture, so hidden parts are pictured too and the document does not change.
+- At a milestone, pass only the changed sections; omitted `summary`, `conventions` and `openIssues` are kept. `removeSectionIds` drops sections.
+- The user's text outside the `plasticity-brief` markers is never touched. Unbalanced markers make the call fail instead of overwriting.
+- Rename bodies first (`plasticity_rename`): the body tables show names, and `Cylinder.002` tells the next reader nothing.
+- A document without a file needs `path`. Saving it is the user's call.
 
 ## Reading a large document
 

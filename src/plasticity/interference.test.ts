@@ -5,7 +5,7 @@ import {
   checkBodyInterference,
   type NativeInterferencePairResult,
 } from "./interference.ts";
-import { PlasticityOperations } from "./operations.ts";
+import { PlasticityOperations } from "./operations/index.ts";
 import type { PlasticityRuntime, RuntimeState } from "./runtime.ts";
 
 const pairs = [{ firstBodyId: 7, secondBodyId: 8 }];

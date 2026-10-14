@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { SplitSolidByPlanesRecipe, SplitSolidByPlanesRecipeError } from "./split-solid-by-planes.ts";
-import type { PlasticityOperations } from "./operations.ts";
+import type { PlasticityOperations } from "./operations/index.ts";
 import type { SplitSolidByPlaneRecipe, SplitSolidByPlaneResult } from "./split-solid.ts";
 import type { RuntimeState } from "./runtime.ts";
 
