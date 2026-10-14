@@ -7,7 +7,7 @@ import {
   type MemberFrame,
   type RectangularTopology,
 } from "./member-geometry.ts";
-import { PlasticityOperations } from "./operations.ts";
+import { PlasticityOperations } from "./operations/index.ts";
 import type { PlasticityRuntime, RuntimeState } from "./runtime.ts";
 
 const frame: MemberFrame = { lengthAxis: [1, 0, 0], heightAxis: [0, 0, 1] };

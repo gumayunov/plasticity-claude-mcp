@@ -1,5 +1,5 @@
 import type { RuntimeState } from "./runtime.ts";
-import type { PlasticityOperations } from "./operations.ts";
+import type { PlasticityOperations } from "./operations/index.ts";
 import { SplitSolidByPlaneRecipe, SplitSolidByPlaneRecipeError, type SplitSolidByPlaneInput, type SplitSolidByPlaneResult } from "./split-solid.ts";
 
 type Vector3 = [number, number, number];

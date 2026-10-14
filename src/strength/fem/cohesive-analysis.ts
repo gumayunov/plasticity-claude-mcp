@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 
-import type { PlasticityOperations } from "../../plasticity/operations.ts";
+import type { PlasticityOperations } from "../../plasticity/operations/index.ts";
 import type { CadBinding } from "../contracts.ts";
 import { analyzeMaterialInterfaceTestCurve, interfaceTestRecordSchema, type InterfaceTestStore } from "../interface-test.ts";
 import { exactMaterialCouponProcessSchema, MaterialCouponQualificationStore, sameMaterialCouponProcess, type MaterialCouponProcess, type MaterialCouponQualificationRecord } from "../material-qualification.ts";

@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 
 import { discoverPlasticityTargets } from "../src/cdp/discovery.ts";
 import { acquireWindowOwnership } from "../src/plasticity/ownership.ts";
-import { PlasticityOperations } from "../src/plasticity/operations.ts";
+import { PlasticityOperations } from "../src/plasticity/operations/index.ts";
 import { PlasticityRuntime, type RuntimeState } from "../src/plasticity/runtime.ts";
 import { parseNativeSolidPropertiesAcceptanceArgs } from "./verify-native-solid-properties-live.ts";
 import { sanitizeEvidence } from "./verify-section-strength-live.ts";
