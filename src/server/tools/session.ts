@@ -9,6 +9,22 @@ import type { RequirementsManifest } from "../../plasticity/compat/requirements.
 import requirements from "../../plasticity/compat/requirements.generated.json" with { type: "json" };
 import type { PlasticityOperations } from "../../plasticity/operations/index.ts";
 import type { PlasticityRuntime } from "../../plasticity/runtime.ts";
+import { access } from "node:fs/promises";
+import { briefPathFor } from "../project-brief.ts";
+import type { SessionLike } from "../session.ts";
+
+/** Points the model at the project brief next to the open document, so it reads the project's context first. */
+async function findProjectBrief(session: SessionLike): Promise<{ path: string; hint: string } | null> {
+  try {
+    const file = await (session.get() as Partial<PlasticityOperations>).documentFile?.();
+    if (!file) return null;
+    const path = briefPathFor(file);
+    await access(path);
+    return { path, hint: "Read this project brief before editing: it describes the parts, conventions and open issues. Update it with plasticity_write_project_brief at milestones." };
+  } catch {
+    return null;
+  }
+}
 
 export function registerSessionTools(ctx: ToolContext): void {
   const { session, constructionHistory, journal, journalPersistenceWarnings, tool, sceneChangeInput, toolsetRows, setToolsetEnabled } = ctx;
@@ -28,7 +44,8 @@ export function registerSessionTools(ctx: ToolContext): void {
     const state = await session.connect(targetId);
     if (!isRuntimeState(state)) throw new Error("Plasticity returned an invalid connected document state");
     const runtime = connectedRuntime();
-    return { ...compactStatusSummary(state, 0, 50), ...(runtime ? { plasticity: runtime.getCompatibility() } : {}) };
+    const projectBrief = await findProjectBrief(session);
+    return { ...compactStatusSummary(state, 0, 50), ...(projectBrief ? { projectBrief } : {}), ...(runtime ? { plasticity: runtime.getCompatibility() } : {}) };
   });
   tool("plasticity_compatibility_report", "Check whether the Plasticity version provides every native factory, command and editor path this MCP server uses, and list the tools affected by anything missing. Uses the connected window, or probes a window directly when plasticity_connect failed (pass targetId if several windows are open). Read-only.", z.object({
     targetId: z.string().trim().min(1).optional(),

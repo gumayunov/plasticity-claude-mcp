@@ -108,3 +108,18 @@ test("the camera snippet restores the camera and the active construction plane",
   assert.equal(camera.zoom, 2);
   assert.equal(viewport.constructionPlane, topPlane);
 });
+
+test("isolates the requested bodies, hides overlays and restores both", async () => {
+  const { runtime, setViewArgs } = fakeRuntime();
+  const calls: Array<[string, unknown]> = [];
+  const read = runtime.read.bind(runtime);
+  (runtime as unknown as { read: (declaration: string, values?: unknown[]) => Promise<unknown> }).read = async (declaration: string, values: unknown[] = []) => {
+    if (declaration.includes("__mcpIsolation")) { calls.push(["isolate", values[0]]); return true; }
+    if (declaration.includes("__mcp-capture-overlays")) { calls.push(["overlays", values[0]]); return true; }
+    return await read(declaration, values);
+  };
+  await new PlasticityOperations(runtime).viewImages(["top"], true, 1024, "png", { bodyIds: [3], hideOverlays: true });
+  assert.deepEqual(setViewArgs, [{ view: "top", fit: true, visibleVersionIds: [13] }]);
+  assert.deepEqual(calls, [["isolate", "isolate"], ["overlays", true], ["isolate", "restore"], ["overlays", false]]);
+  await assert.rejects(new PlasticityOperations(runtime).viewImages(["top"], true, 1024, "png", { bodyIds: [99] }), /Unknown body ids: 99/);
+});

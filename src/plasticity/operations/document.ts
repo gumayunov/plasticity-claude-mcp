@@ -61,6 +61,52 @@ const VIEWPORT_RECT_SNIPPET = `function () {
   return rect.width > 0 && rect.height > 0 ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
 }`;
 
+// Runs in the renderer: hide every body view except the kept versions, or restore the ones hidden before.
+// Only the three.js objects change, so the document, its Undo history and the user's visibility stay untouched.
+export const ISOLATE_SNIPPET = `function (action, keepVersionIds) {
+  const views = this.geo.geometryModel;
+  if (action === 'restore') {
+    const saved = this.__mcpIsolation ?? { hidden: [], shown: [] };
+    for (const versionId of saved.hidden) { const item = views.get(versionId); if (item?.view) item.view.visible = true; }
+    for (const versionId of saved.shown) { const item = views.get(versionId); if (item?.view) item.view.visible = false; }
+    delete this.__mcpIsolation;
+  } else {
+    // Kept bodies the user has hidden are shown too: a picture of a part should not depend on what is hidden right now.
+    const keep = new Set(keepVersionIds);
+    const hidden = [];
+    const shown = [];
+    for (const [versionId, item] of views) {
+      if (!item?.view) continue;
+      if (keep.has(versionId) && !item.view.visible) { item.view.visible = true; shown.push(versionId); }
+      else if (!keep.has(versionId) && item.view.visible) { item.view.visible = false; hidden.push(versionId); }
+    }
+    this.__mcpIsolation = { hidden, shown };
+  }
+  for (const viewport of this.viewports) viewport.setNeedsRender?.();
+  return true;
+}`;
+
+// Runs in the renderer: the toolbars, view cube and settings panels are HTML drawn over the viewport canvas,
+// so a viewport crop still contains them. Hide everything above the canvas while capturing.
+export const CAPTURE_OVERLAY_SNIPPET = `function (hide) {
+  const id = '__mcp-capture-overlays';
+  document.getElementById(id)?.remove();
+  if (hide) {
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = 'plasticity-viewport > :not(canvas) { visibility: hidden !important; }';
+    document.head.appendChild(style);
+  }
+  return new Promise((resolve) => requestAnimationFrame(() => resolve(true)));
+}`;
+
+export interface ViewImageOptions {
+  /** Show and frame only these bodies; every other body is hidden in the renderer for the capture. */
+  bodyIds?: readonly number[];
+  /** Hide the HTML panels drawn over the viewport. */
+  hideOverlays?: boolean;
+}
+
 export abstract class DocumentOperations extends OperationsBase {
   async undo(revision?: string): Promise<RuntimeState> {
     if (revision) await this.assertRevision(revision);
@@ -72,6 +118,11 @@ export abstract class DocumentOperations extends OperationsBase {
     if (revision) await this.assertRevision(revision);
     await this.runtime.mutate(`async function () { if (this.executor.isBusy) throw new Error('Plasticity is busy'); await this.redo(); }`, []);
     return await this.state();
+  }
+
+  /** The .plasticity file the open document was loaded from or last saved to, or null for a new document. */
+  async documentFile(): Promise<string | null> {
+    return await this.runtime.read<string | null>(`function () { return this.document?.filename || null; }`);
   }
 
   async saveCopy(outputPath: string): Promise<{ path: string; bytes: number }> {
@@ -171,11 +222,13 @@ export abstract class DocumentOperations extends OperationsBase {
     return { path: output, bytes: data.length };
   }
 
-  async setView(view: "front" | "back" | "left" | "right" | "top" | "bottom" | "isometric", fit: boolean): Promise<unknown> {
+  async setView(view: "front" | "back" | "left" | "right" | "top" | "bottom" | "isometric", fit: boolean, fitVersionIds?: readonly number[]): Promise<unknown> {
     // Fit only what the user can see: hidden bodies (for example a large startup cube) must not shrink the framing.
-    const visibleVersionIds = fit
-      ? (await this.state()).bodies.filter((body) => body.visible && !body.hidden).map((body) => body.versionId)
-      : [];
+    const visibleVersionIds = !fit
+      ? []
+      : fitVersionIds
+        ? [...fitVersionIds]
+        : (await this.state()).bodies.filter((body) => body.visible && !body.hidden).map((body) => body.versionId);
     return await this.runtime.read(`async function (args) {
       if (this.executor.isBusy) throw new Error('Plasticity is busy');
       const viewport = Array.from(this.viewports)[0];
@@ -189,6 +242,8 @@ export abstract class DocumentOperations extends OperationsBase {
         await viewport.navigateToOrientation(({ front: 4, back: 1, left: 3, right: 0, top: 2, bottom: 5 })[args.view]);
       }
       if (args.fit) {
+        // The bounding sphere already contains the box, so only a small margin is needed.
+        const FIT_MARGIN = 1.08;
         const bounds = [...this.geo.geometryModel].filter(([versionId]) => args.visibleVersionIds.includes(versionId)).map(([, item]) => item.model?.FindBox?.()).filter(Boolean);
         if (bounds.length) {
           const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
@@ -203,7 +258,7 @@ export abstract class DocumentOperations extends OperationsBase {
           const halfVerticalFov = camera.perspective.fov * Math.PI / 360;
           const halfHorizontalFov = Math.atan(Math.tan(halfVerticalFov) * camera.aspect);
           const limitingFov = Math.min(halfVerticalFov, halfHorizontalFov);
-          const distance = limitingFov > 0 ? radius / Math.sin(limitingFov) * 1.4 : radius * 3;
+          const distance = limitingFov > 0 ? radius / Math.sin(limitingFov) * FIT_MARGIN : radius * 3;
           controls.target.copy(center);
           controls.targetEnd.copy(center);
           controls.focalOffset.set(0, 0, 0);
@@ -211,7 +266,7 @@ export abstract class DocumentOperations extends OperationsBase {
           controls.radius = controls.radiusEnd = distance;
           const width = camera.orthographic.right - camera.orthographic.left;
           const height = camera.orthographic.top - camera.orthographic.bottom;
-          const zoom = Math.min(width, height) / (radius * 2 * 1.4);
+          const zoom = Math.min(width, height) / (radius * 2 * FIT_MARGIN);
           controls.zoom = controls.zoomEnd = zoom;
           camera.zoom = zoom;
           controls.setNeedsUpdate();
@@ -224,7 +279,7 @@ export abstract class DocumentOperations extends OperationsBase {
     }`, [{ view, fit, visibleVersionIds }]);
   }
 
-  async viewImages(views: readonly ViewName[], fit: boolean, maxWidth: number, format: "jpeg" | "png"): Promise<{
+  async viewImages(views: readonly ViewName[], fit: boolean, maxWidth: number, format: "jpeg" | "png", options: ViewImageOptions = {}): Promise<{
     revision: string;
     bodyCount: number;
     cameraSettled: boolean;
@@ -235,12 +290,21 @@ export abstract class DocumentOperations extends OperationsBase {
     if (await this.runtime.read<boolean>("function () { return document.hidden; }")) {
       throw new Error("Plasticity renderer is hidden; activate Plasticity and retry");
     }
+    let isolatedVersionIds: number[] | undefined;
+    if (options.bodyIds && options.bodyIds.length > 0) {
+      const byId = new Map(state.bodies.map((body) => [body.id, body.versionId]));
+      const missing = options.bodyIds.filter((id) => !byId.has(id));
+      if (missing.length > 0) throw new Error(`Unknown body ids: ${missing.join(", ")}`);
+      isolatedVersionIds = options.bodyIds.map((id) => byId.get(id)!);
+    }
     const saved = await this.runtime.read<unknown>(CAMERA_SNIPPET, ["save", null]);
     const images: Array<{ view: ViewName; width: number; height: number; data: string; mimeType: string }> = [];
     let cameraSettled = true;
     try {
+      if (isolatedVersionIds) await this.runtime.read(ISOLATE_SNIPPET, ["isolate", isolatedVersionIds]);
+      if (options.hideOverlays) await this.runtime.read(CAPTURE_OVERLAY_SNIPPET, [true]);
       for (const view of views) {
-        if (view !== "current") await this.setView(view, fit);
+        if (view !== "current") await this.setView(view, fit, isolatedVersionIds);
         if (!(await this.runtime.read<boolean>(CAMERA_SETTLED_SNIPPET))) cameraSettled = false;
         const viewport = await this.runtime.read<{ x: number; y: number; width: number; height: number } | null>(VIEWPORT_RECT_SNIPPET);
         let rect = viewport;
@@ -257,7 +321,15 @@ export abstract class DocumentOperations extends OperationsBase {
         images.push({ view, width: Math.round(rect.width * scale), height: Math.round(rect.height * scale), data, mimeType: format === "jpeg" ? "image/jpeg" : "image/png" });
       }
     } finally {
-      await this.runtime.read(CAMERA_SNIPPET, ["restore", saved]);
+      // Restore everything even if one step fails, and report the first failure.
+      const restores = [
+        () => this.runtime.read(CAMERA_SNIPPET, ["restore", saved]),
+        ...(isolatedVersionIds ? [() => this.runtime.read(ISOLATE_SNIPPET, ["restore", null])] : []),
+        ...(options.hideOverlays ? [() => this.runtime.read(CAPTURE_OVERLAY_SNIPPET, [false])] : []),
+      ];
+      const failures: unknown[] = [];
+      for (const restore of restores) await restore().catch((error: unknown) => { failures.push(error); });
+      if (failures.length > 0) throw failures[0];
     }
     return { revision: state.revision, bodyCount: state.bodies.length, cameraSettled, images };
   }

@@ -48677,7 +48677,7 @@
     },
     {
       "name": "plasticity_view",
-      "description": "Capture the Plasticity viewport from one or more standard views and return the images directly, so you can check visually what you built. Fitting uses visible bodies only; the user's camera is restored afterwards. Use measurements, not images, for exact dimensions.",
+      "description": "Capture the Plasticity viewport from one or more standard views and return the images directly, so you can check visually what you built. Fitting uses visible bodies only; with bodyIds only those bodies are shown and framed (the others are hidden in the renderer for the capture, not in the document). Toolbars and panels are left out unless hideOverlays is false. The user's camera is restored afterwards. Use measurements, not images, for exact dimensions.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -48719,6 +48719,20 @@
               "jpeg",
               "png"
             ]
+          },
+          "bodyIds": {
+            "minItems": 1,
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "hideOverlays": {
+            "default": true,
+            "type": "boolean"
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -48771,6 +48785,159 @@
       },
       "annotations": {
         "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "plasticity_write_project_brief",
+      "description": "Write or update the project brief: a Markdown file next to the .plasticity document (Name.md, pictures in Name.assets/) with an overview, coordinate conventions, one section per assembly with isolated pictures and a body table, open issues and a body inventory by group. Read it first when resuming a project; update it at milestones. Generated parts sit between plasticity-brief markers and are replaced; text outside them is kept. Sections are upserted by id, so pass only the sections that changed; summary, conventions and openIssues are kept when omitted. Pictures hide the other bodies in the renderer only; the document is not changed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "description": "Brief .md path; default is the document's file with .md",
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "summary": {
+            "description": "Markdown: what the model is, key dimensions, status",
+            "type": "string",
+            "maxLength": 20000
+          },
+          "conventions": {
+            "description": "Markdown: axes, which side is front, units, reference planes, transforms",
+            "type": "string",
+            "maxLength": 20000
+          },
+          "sections": {
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "description": {
+                  "type": "string",
+                  "maxLength": 20000,
+                  "description": "Markdown: purpose, how it is made or bought, fasteners, material, decisions"
+                },
+                "bodyIds": {
+                  "maxItems": 4096,
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "groupIds": {
+                  "maxItems": 256,
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "views": {
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "isometric",
+                      "front",
+                      "back",
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "description"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "removeSectionIds": {
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "openIssues": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          },
+          "overviewViews": {
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "isometric",
+                "front",
+                "back",
+                "left",
+                "right",
+                "top",
+                "bottom"
+              ]
+            }
+          },
+          "imageWidth": {
+            "default": 1200,
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 2048
+          },
+          "includeInventory": {
+            "default": true,
+            "type": "boolean"
+          },
+          "language": {
+            "default": "en",
+            "description": "Language of generated headings and labels",
+            "type": "string",
+            "enum": [
+              "en",
+              "ru"
+            ]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
         "destructiveHint": false,
         "openWorldHint": false
       }
@@ -49917,6 +50084,10 @@
     },
     {
       "name": "plasticity_wait_for_change"
+    },
+    {
+      "name": "plasticity_write_project_brief",
+      "description": "Write or update the project brief: a Markdown file next to the .plasticity document (Name.md, pictures in Name.assets/) with an overview, coordinate conventions, one section per assembly with isolated pictures and a body table, open issues and a body inventory by group. Read it first when resuming a project; update it at milestones. Generated parts sit between plasticity-brief markers and are replaced; text outside them is kept. Sections are upserted by id, so pass only the sections that changed; summary, conventions and openIssues are kept when omitted. Pictures hide the other bodies in the renderer only; the document is not changed."
     }
   ]
 }

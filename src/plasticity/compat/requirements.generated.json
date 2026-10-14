@@ -3310,6 +3310,11 @@
       "methods": [],
       "bindings": [],
       "commands": []
+    },
+    "plasticity_write_project_brief": {
+      "methods": [],
+      "bindings": [],
+      "commands": []
     }
   }
 }

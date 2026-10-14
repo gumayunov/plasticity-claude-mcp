@@ -70,6 +70,7 @@
     "deleteSectionAnalysis",
     "dissolveFaces",
     "dissolveGroups",
+    "documentFile",
     "draftFaces",
     "duplicateBodies",
     "duplicateCurves",
