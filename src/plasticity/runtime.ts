@@ -11,6 +11,8 @@ import { STATE_READ_FUNCTION } from "./state-read-function.ts";
 
 export const NATIVE_STATE_READ_TIMEOUT_MS = 300_000;
 export const LONG_NATIVE_IMPORT_TIMEOUT_MS = 300_000;
+// UTF-16 code units per slice; at most 3 UTF-8 bytes each keeps a slice far below the 128 MiB frame limit.
+export const CHUNKED_READ_SLICE_CHARS = 16 * 1024 * 1024;
 
 interface RemoteObject {
   objectId?: string;
@@ -218,6 +220,8 @@ export class PlasticityRuntime {
   private uncertain = false;
   private readonly connectClient: (url: string) => Promise<CdpClient>;
 
+  private readonly chunkedReadSliceChars: number = CHUNKED_READ_SLICE_CHARS;
+
   private constructor(client: CdpClient, target: PlasticityTarget, editorId: string, connectClient = CdpClient.connect) {
     this.client = client;
     this.target = target;
@@ -326,6 +330,43 @@ export class PlasticityRuntime {
     return await this.enqueue(() => this.call<T>(functionDeclaration, bindingNames, values, timeoutMs));
   }
 
+  // Like readNative, but for results that can exceed the WebSocket message limit (Node's WebSocket
+  // drops frames above 128 MiB). The renderer serializes the result once and Node fetches it in slices.
+  async readNativeChunked<T>(
+    functionDeclaration: string,
+    bindingNames: string[],
+    values: unknown[] = [],
+    timeoutMs?: number,
+  ): Promise<T> {
+    return await this.enqueue(async () => {
+      const staged = await this.call<{ key: string; length: number }>(`function (...args) {
+        const read = (${functionDeclaration});
+        const stage = (value) => {
+          const text = JSON.stringify(value === undefined ? null : value);
+          const key = '__plasticityMcpChunked_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
+          Object.defineProperty(globalThis, key, { value: text, configurable: true, writable: true });
+          return { key, length: text.length };
+        };
+        const value = read.apply(this, args);
+        return value && typeof value.then === 'function' ? value.then(stage) : stage(value);
+      }`, bindingNames, values, timeoutMs);
+      try {
+        const parts: string[] = [];
+        for (let start = 0; start < staged.length; start += this.chunkedReadSliceChars) {
+          parts.push(await this.call<string>(
+            "function (key, start, end) { return globalThis[key].slice(start, end); }",
+            [],
+            [staged.key, start, start + this.chunkedReadSliceChars],
+            timeoutMs,
+          ));
+        }
+        return JSON.parse(parts.join("")) as T;
+      } finally {
+        await this.call("function (key) { delete globalThis[key]; }", [], [staged.key], timeoutMs).catch(() => undefined);
+      }
+    });
+  }
+
   async mutate<T>(
     functionDeclaration: string,
     bindingNames: string[],
@@ -352,7 +393,7 @@ export class PlasticityRuntime {
   async getState(timeoutMs = NATIVE_STATE_READ_TIMEOUT_MS): Promise<RuntimeState> {
     let result: Omit<RuntimeState, "targetId" | "title">;
     try {
-      result = await this.readNative<Omit<RuntimeState, "targetId" | "title">>(
+      result = await this.readNativeChunked<Omit<RuntimeState, "targetId" | "title">>(
         withEditorCompat(STATE_READ_FUNCTION, this.resolved.profile.editorPaths),
         ["ConstructionPlaneDatabase", "Vector3", "Quaternion"],
         [],
