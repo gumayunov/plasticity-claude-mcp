@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 
-import type { PlasticityOperations } from "../../plasticity/operations.ts";
+import type { PlasticityOperations } from "../../plasticity/operations/index.ts";
 import { generateCalculiXMeshFromStep, readElementSICN } from "./step-face-mapping.ts";
 import { runLinearStaticCase, type LinearStaticCaseResult } from "./calculix-linear-static.ts";
 import { classifyRefinementTrend, maximumStressLocationShiftMm } from "./refinement-diagnostics.ts";

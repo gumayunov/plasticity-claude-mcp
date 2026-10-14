@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { PlasticityOperations } from "../../plasticity/operations.ts";
+import type { PlasticityOperations } from "../../plasticity/operations/index.ts";
 import { InterfaceTestStore, type InterfaceTestInput } from "../interface-test.ts";
 import { MaterialCouponQualificationStore, type MaterialCouponQualificationInput } from "../material-qualification.ts";
 import { analyzeCohesiveInterface, cohesiveAnalysisInputSchema, cohesiveAnalysisRequestSchema, type CohesiveAnalysisDependencies, type CohesiveAnalysisRequest } from "./cohesive-analysis.ts";

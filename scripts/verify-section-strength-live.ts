@@ -8,6 +8,9 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 import type { Evidence } from "../src/strength/contracts.ts";
 import type { SectionScenarioInput } from "../src/strength/section-contracts.ts";
+import { hasSceneContentChanges, sanitizeEvidence } from "./live/harness.ts";
+
+export { hasSceneContentChanges, sanitizeEvidence };
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -748,45 +751,6 @@ function near(actual: number, expected: number, tolerance: number, label: string
 
 function requireCondition(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
-}
-
-export function hasSceneContentChanges(diff: {
-  documentChanged: boolean;
-  added: unknown[];
-  removed: unknown[];
-  modified: unknown[];
-  constructionPlanesAdded: unknown[];
-  constructionPlanesRemoved: unknown[];
-  constructionPlanesModified: unknown[];
-  activeWorkplaneChanged: unknown | null;
-  materialsChanged?: boolean;
-  measurementsChanged?: boolean;
-  instancesChanged?: boolean;
-  referenceMeshesChanged?: boolean;
-  groupsChanged?: boolean;
-}): boolean {
-  return diff.documentChanged
-    || diff.added.length > 0
-    || diff.removed.length > 0
-    || diff.modified.length > 0
-    || diff.constructionPlanesAdded.length > 0
-    || diff.constructionPlanesRemoved.length > 0
-    || diff.constructionPlanesModified.length > 0
-    || diff.activeWorkplaneChanged !== null
-    || diff.materialsChanged === true
-    || diff.measurementsChanged === true
-    || diff.instancesChanged === true
-    || diff.referenceMeshesChanged === true
-    || diff.groupsChanged === true;
-}
-
-export function sanitizeEvidence(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map((item) => sanitizeEvidence(item));
-  if (typeof value !== "object" || value === null) return value;
-  const forbidden = new Set(["password", "secret", "credential", "accessCode", "prompt", "fullPrompt", "nativeDump", "nativeObject", "rawNative"]);
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
-    .filter(([key]) => !forbidden.has(key))
-    .map(([key, entry]) => [key, sanitizeEvidence(entry)]));
 }
 
 function stateSummary(state: any): Record<string, unknown> {
