@@ -1,5 +1,5 @@
 import { add, cross, normalize, scale, subtract, type Vector3 } from "./construction.ts";
-import type { PlasticityOperations } from "./operations.ts";
+import type { PlasticityOperations } from "./operations/index.ts";
 import { mutationOutcomeIsUncertain, type RuntimeState } from "./runtime.ts";
 
 export type PrintedThreadHandedness = "right" | "left";

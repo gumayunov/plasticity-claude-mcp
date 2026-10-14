@@ -52,7 +52,7 @@ export class ConstructionGeometry {
       },
       activeWorkplane: {
         available: activeAvailable,
-        reason: activeAvailable ? null : "Plasticity active workplane control is unavailable in 26.1.3",
+        reason: activeAvailable ? null : "Plasticity active workplane control is unavailable in this Plasticity version",
       },
     };
   }

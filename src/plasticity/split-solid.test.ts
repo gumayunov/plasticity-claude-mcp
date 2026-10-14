@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { SplitSolidByPlaneRecipe } from "./split-solid.ts";
-import type { PlasticityOperations } from "./operations.ts";
+import type { PlasticityOperations } from "./operations/index.ts";
 import type { RuntimeState } from "./runtime.ts";
 
 test("splits a Solid with a native planar cutter and preserves exact total volume", async () => {

@@ -9,7 +9,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 import type { AnalysisClient } from "../codex/analysis-client.ts";
 import type { ReferenceSearchClient } from "../codex/reference-search-client.ts";
-import { createServer, strengthDependenciesForSession, type SessionLike } from "../server.ts";
+import { createServer, strengthDependenciesForSession, type SessionLike } from "../server/index.ts";
 import { StrengthStore } from "../strength/store.ts";
 
 const fakeSession = {

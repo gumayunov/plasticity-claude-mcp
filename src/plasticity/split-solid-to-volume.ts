@@ -1,4 +1,4 @@
-import type { PlasticityOperations } from "./operations.ts";
+import type { PlasticityOperations } from "./operations/index.ts";
 import type { RuntimeState } from "./runtime.ts";
 import { SplitSolidByPlanesRecipe, type SplitSolidByPlanesResult } from "./split-solid-by-planes.ts";
 

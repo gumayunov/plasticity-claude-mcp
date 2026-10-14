@@ -6,7 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createReferenceSearchClient } from "../src/codex/reference-search-client.ts";
 import { referenceSearchResultSchema } from "../src/codex/reference-search.ts";
 import { resolveReferenceSearchProfile } from "../src/codex/analysis-profile.ts";
-import { PlasticitySession, createServer, strengthDependenciesForSession } from "../src/server.ts";
+import { PlasticitySession, createServer, strengthDependenciesForSession } from "../src/server/index.ts";
 
 interface Options {
   query: string;
