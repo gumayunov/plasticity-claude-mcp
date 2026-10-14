@@ -345,3 +345,21 @@ function plane(id: string, nativeId: string, name: string, zMm: number): Constru
     ...frameFromOriginNormalX([0, 0, zMm], [0, 0, 1], [1, 0, 0]),
   };
 }
+
+test("reports group member deltas instead of the whole group tree", () => {
+  const group = (id: number, bodyIds: number[], name = `G${id}`) => ({
+    id, name, parentId: id === 0 ? null : 0, childGroupIds: [] as number[], bodyIds, instanceIds: [] as number[], referenceMeshIds: [] as number[],
+    otherNodeKeys: [] as number[], visible: true, hidden: false, locked: false,
+  });
+  const imported = group(4, Array.from({ length: 300 }, (_, index) => 100 + index), "Imported STEP");
+  const previous = { ...state("r1", [body(1, 1, "Part")]), activeGroupId: 0, groups: [group(0, [1, 2]), imported, group(5, [7])] };
+  const current = { ...state("r2", [body(1, 1, "Part")]), activeGroupId: 0, groups: [group(0, [1, 3]), imported, group(6, [8], "New")] };
+
+  const diff = diffScenes(previous, current);
+
+  assert.deepEqual(diff.groupChanges, [
+    { id: 0, name: "G0", change: "modified", bodyIdsAdded: [3], bodyIdsRemoved: [2] },
+    { id: 6, name: "New", change: "added", bodyIdsAdded: [8] },
+    { id: 5, name: "G5", change: "removed" },
+  ]);
+});

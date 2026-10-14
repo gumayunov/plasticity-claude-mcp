@@ -172,7 +172,9 @@ export function changesOnlyMutationResult<T>(value: RuntimeState, change: SceneD
     ...(change.sectionAnalysesChanged && value.sectionAnalyses ? { sectionAnalyses: value.sectionAnalyses } : {}),
     ...(change.instancesChanged && value.instances ? { instances: value.instances } : {}),
     ...(change.referenceMeshesChanged && value.referenceMeshes ? { referenceMeshes: value.referenceMeshes } : {}),
-    ...(change.groupsChanged && value.groups ? { groups: value.groups } : {}),
+    // The whole group tree lists every body id and can run to thousands of tokens on an imported assembly;
+    // send only what changed and leave the full tree to plasticity_status / plasticity_list_groups.
+    ...(change.groupsChanged ? { groupChanges: change.groupChanges ?? [] } : {}),
     change: {
       sceneChanged: change.sceneChanged,
       revisionChanged: change.revisionChanged,
