@@ -19,6 +19,12 @@ interface CdpEnvelope {
   params?: unknown;
 }
 
+export interface ScreenshotOptions {
+  format?: "png" | "jpeg";
+  quality?: number;
+  clip?: { x: number; y: number; width: number; height: number; scale: number };
+}
+
 export class CdpClient {
   private nextId = 1;
   private readonly pending = new Map<number, PendingRequest>();
@@ -78,13 +84,19 @@ export class CdpClient {
     });
   }
 
-  async captureScreenshot(timeoutMs = this.timeoutMs): Promise<string> {
-    const result = await this.send("Page.captureScreenshot", { format: "png", fromSurface: true }, timeoutMs);
+  async captureScreenshot(timeoutMs = this.timeoutMs, options: ScreenshotOptions = {}): Promise<string> {
+    const result = await this.send("Page.captureScreenshot", {
+      format: options.format ?? "png",
+      fromSurface: true,
+      ...(options.quality === undefined ? {} : { quality: options.quality }),
+      ...(options.clip === undefined ? {} : { clip: options.clip }),
+    }, timeoutMs);
     if (typeof result !== "object" || result === null || !("data" in result) || typeof result.data !== "string") {
       throw new Error("Plasticity returned no screenshot image data");
     }
     return result.data;
   }
+
 
   on(method: string, listener: (params: unknown) => void): () => void {
     const listeners = this.eventListeners.get(method) ?? new Set();

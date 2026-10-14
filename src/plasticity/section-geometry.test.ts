@@ -7,9 +7,9 @@ import {
   type NativeSectionEdge,
   type NativeSectionTopology,
 } from "./section-geometry.ts";
-import { PlasticityOperations } from "./operations.ts";
+import { PlasticityOperations } from "./operations/index.ts";
 import type { PlasticityRuntime, RuntimeState } from "./runtime.ts";
-import { strengthDependenciesForSession, type SessionLike } from "../server.ts";
+import { strengthDependenciesForSession, type SessionLike } from "../server/index.ts";
 
 const request = { bodyId: 7, faceId: "face-top", revision: "r1", xDirection: [1, 0, 0] as [number, number, number] };
 

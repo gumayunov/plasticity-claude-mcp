@@ -7,7 +7,7 @@ import { createReferenceSearchClient } from "../src/codex/reference-search-clien
 import { createClaudeAnalysisClient } from "../src/claude/analysis-client.ts";
 import { createClaudeReferenceSearchClient } from "../src/claude/reference-search-client.ts";
 import { analysisProviderFromEnv, inspectClaudeExecutable } from "../src/claude/provider.ts";
-import { createCompactServer, createServer, PlasticitySession, strengthDependenciesForSession } from "../src/server.ts";
+import { createCompactServer, createServer, PlasticitySession, strengthDependenciesForSession } from "../src/server/index.ts";
 import { StrengthStore } from "../src/strength/store.ts";
 import { FemReportStore } from "../src/strength/fem/fem-report-store.ts";
 import { PrintedThreadQualificationStore } from "../src/printing/thread-qualification.ts";

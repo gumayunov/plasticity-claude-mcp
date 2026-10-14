@@ -1,5 +1,5 @@
 import { mutationOutcomeIsUncertain, type RuntimeState } from "./runtime.ts";
-import type { PlasticityOperations } from "./operations.ts";
+import type { PlasticityOperations } from "./operations/index.ts";
 
 type Vector3 = [number, number, number];
 
