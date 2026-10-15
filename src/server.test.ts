@@ -1312,6 +1312,15 @@ test("Codex tool router catalogs and validates every registered operation", asyn
   assert.deepEqual((exactName.tools as Array<{ name: string }>).map((item) => item.name), ["plasticity_create_through_hole"],
     "an exact name selects that operation even when other names contain it");
   assert.equal(JSON.stringify(exactName).includes("prefixItems"), false, "uniform vectors are exported as fixed-length arrays");
+  for (const [words, expected] of [
+    ["translate move bodies", "plasticity_move"],
+    ["delete bodies", "plasticity_delete"],
+    ["sew join sheets", "plasticity_join_sheets"],
+    ["polyline line segment", "plasticity_create_polyline"],
+  ]) {
+    const ranked = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: words, limit: 3 } }));
+    assert.equal((ranked.tools as Array<{ name: string }>)[0]?.name, expected, `"${words}" must rank ${expected} first`);
+  }
 
   const invalid = await client.callTool({ name: "plasticity_call", arguments: {
     toolName: "plasticity_create_box",
