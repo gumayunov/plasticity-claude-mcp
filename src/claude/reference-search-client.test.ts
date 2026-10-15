@@ -92,6 +92,9 @@ test("timeouts are reported as search timeouts", async (context) => {
     () => client.search({ query: "HFS5-2020 STEP", allowedDomains: [], limit: 5 }, { timeoutMs: 1_000 }),
     (error: unknown) => hasCode(error, "SEARCH_TIMEOUT"),
   );
+  // The abort rejects as soon as SIGTERM is sent; the fake claude writes its
+  // exit record afterwards, so removing the directory earlier races with it
+  await waitForFile(harness.exitRecord);
   await client.close();
 });
 
@@ -99,11 +102,13 @@ async function createHarness(context: test.TestContext, mode: string) {
   const root = await mkdtemp(join(tmpdir(), "plasticity-claude-search-"));
   context.after(() => rm(root, { recursive: true, force: true }));
   const record = join(root, "record.log");
+  const exitRecord = join(root, "exit.log");
   return {
     record,
+    exitRecord,
     client: (options: { model?: string } = {}) => createClaudeReferenceSearchClient({
       executable: process.execPath,
-      executableArgs: [fixture, "--mode", mode, "--record", record, "--exit-record", join(root, "exit.log"), "--"],
+      executableArgs: [fixture, "--mode", mode, "--record", record, "--exit-record", exitRecord, "--"],
       cwd: root,
       ...options,
     }),
@@ -128,6 +133,14 @@ function values(argv: string[], name: string): string[] {
 
 async function lines(path: string): Promise<string[]> {
   try { return (await readFile(path, "utf8")).trim().split("\n").filter(Boolean); } catch { return []; }
+}
+
+async function waitForFile(path: string): Promise<void> {
+  const deadline = Date.now() + 2_000;
+  while (Date.now() < deadline) {
+    try { await readFile(path); return; } catch { await new Promise((resolve) => setTimeout(resolve, 10)); }
+  }
+  throw new Error(`File not observed: ${path}`);
 }
 
 function hasCode(error: unknown, code: string): boolean {
