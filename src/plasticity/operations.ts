@@ -4738,7 +4738,9 @@ export class PlasticityOperations {
           } else if (materialId !== 0 && !editor.db.materials.has(materialId)) {
             throw new Error('Appearance material ID is no longer current: ' + materialId);
           }
-          for (const view of views) editor.db.nodes.setMaterial(editor.db.nodes.item2key(view), materialId);
+          // Plasticity 26.1.3 rejects 0 as "invalid material id"; undefined clears the assignment
+          const nativeMaterialId = materialId === 0 ? undefined : materialId;
+          for (const view of views) editor.db.nodes.setMaterial(editor.db.nodes.item2key(view), nativeMaterialId);
         } catch (error) {
           failure = error;
           throw error;
@@ -4748,6 +4750,57 @@ export class PlasticityOperations {
       if (failure) throw failure;
       if (!ran) throw new Error('Appearance command did not execute');
     }`, [], [{ ids: uniqueIds, material }]);
+    return await this.state();
+  }
+
+  async deleteAppearanceMaterials(materialIds: number[], revision: string): Promise<RuntimeState> {
+    const state = await this.state();
+    if (state.revision !== revision) {
+      throw new Error(`Stale reference: expected revision ${revision}, current revision is ${state.revision}`);
+    }
+    if (materialIds.length === 0) throw new Error("At least one appearance material ID is required");
+    const uniqueIds = [...new Set(materialIds)];
+    if (uniqueIds.length !== materialIds.length) throw new Error("Appearance material IDs must be unique");
+    if (uniqueIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+      throw new Error("Appearance material IDs must be positive integers");
+    }
+    const known = new Set((state.materials ?? []).map((item) => item.id));
+    const unknown = uniqueIds.filter((id) => !known.has(id));
+    if (unknown.length > 0) throw new Error(`Unknown current appearance materials: ${unknown.join(", ")}`);
+    const assigned = uniqueIds.flatMap((id) => {
+      const bodies = state.bodies.filter((body) => body.materialId === id).map((body) => body.id);
+      return bodies.length > 0 ? [`${id} (body ${bodies.join(", ")})`] : [];
+    });
+    if (assigned.length > 0) {
+      throw new Error(`Appearance materials are still assigned: ${assigned.join("; ")}. Reassign or clear them with plasticity_set_appearance_material first`);
+    }
+    await this.runtime.mutate(`async function (args) {
+      if (this.executor.isBusy) throw new Error('Plasticity is busy');
+      const editor = this;
+      // groups and linked instances can hold a material too; the native set covers every node
+      const used = editor.db.nodes.findAllUsedMaterials();
+      const inUse = args.ids.filter(id => used.has(id));
+      if (inUse.length > 0) throw new Error('Appearance materials are still in use by groups or instances: ' + inUse.join(', '));
+      const gone = args.ids.filter(id => !editor.db.materials.has(id));
+      if (gone.length > 0) throw new Error('Appearance material IDs are no longer current: ' + gone.join(', '));
+      this.selection.selected.removeAll();
+      let failure;
+      let ran = false;
+      const command = new this.commands.GroupSelectedCommand(this);
+      command.remember = false;
+      command.execute = async function () {
+        ran = true;
+        try {
+          for (const id of args.ids) editor.db.materials.remove(id);
+        } catch (error) {
+          failure = error;
+          throw error;
+        }
+      };
+      await this.exec(command);
+      if (failure) throw failure;
+      if (!ran) throw new Error('Appearance material delete command did not execute');
+    }`, [], [{ ids: uniqueIds }]);
     return await this.state();
   }
 

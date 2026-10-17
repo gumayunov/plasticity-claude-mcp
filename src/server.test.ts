@@ -218,6 +218,7 @@ test("MCP initializes, lists tools, and validates tool input", async () => {
   assert(tools.tools.some((tool) => tool.name === "plasticity_split_solid_to_build_volume"));
   assert(tools.tools.some((tool) => tool.name === "plasticity_list_appearance_materials"));
   assert(tools.tools.some((tool) => tool.name === "plasticity_set_appearance_material"));
+  assert(tools.tools.some((tool) => tool.name === "plasticity_delete_appearance_materials"));
   assert(tools.tools.some((tool) => tool.name === "plasticity_set_block_dimensions"));
   assert(tools.tools.some((tool) => tool.name === "plasticity_set_radius_dimension"));
   assert(tools.tools.some((tool) => tool.name === "plasticity_set_rectangle_dimensions"));
