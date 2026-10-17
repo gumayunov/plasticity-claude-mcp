@@ -564,6 +564,14 @@ const appearanceMaterialInputSchema = z.object({
     context.addIssue({ code: "custom", path: ["name"], message: "A new appearance requires both name and colorHex" });
   }
 });
+const deleteAppearanceMaterialsInputSchema = z.object({
+  materialIds: z.array(z.number().int().positive()).min(1).max(4096).refine(
+    (values) => new Set(values).size === values.length,
+    "Appearance material IDs must be unique",
+  ),
+  intent,
+  revision,
+}).strict();
 const fastenerGroupInspectionInputSchema = z.object({
   bodyId: z.number().int().positive(),
   cylindricalFaceIds: z.array(z.string().trim().min(1)).min(2).max(256).refine(
@@ -3292,6 +3300,8 @@ function createServerWithCatalog(
       : { name: name!, colorHex: colorHex!, roughness: roughness ?? 0.6, metalness: metalness ?? 0, opacity: opacity ?? 1 };
     return await journaled("set-appearance-material", purpose, { bodyIds, material }, () => session.get().setAppearanceMaterial(bodyIds, material, current));
   });
+  tool("plasticity_delete_appearance_materials", "Delete appearance materials from the document catalog by ID in one native Undo step. A material still assigned to a body, group or linked instance is refused; reassign or clear it with plasticity_set_appearance_material first. This changes display metadata only.", deleteAppearanceMaterialsInputSchema, async ({ materialIds, intent: purpose, revision: current }) =>
+    await journaled("delete-appearance-materials", purpose, { materialIds }, () => session.get().deleteAppearanceMaterials(materialIds, current)));
   tool("plasticity_fillet", "Fillet current edge IDs with a radius in millimeters.", z.object({ id: z.number().int().positive(), edgeIds: z.array(z.string()).min(1), radiusMm: z.number().finite().positive(), intent, revision }), async ({ id, edgeIds, radiusMm, intent: purpose, revision: current }) =>
     await journaled("fillet", purpose, { id, edgeIds, radiusMm }, () => session.get().fillet(id, edgeIds, radiusMm, current)));
   tool("plasticity_chamfer", "Chamfer current edge IDs by an equal distance in millimeters.", z.object({ id: z.number().int().positive(), edgeIds: z.array(z.string()).min(1), distanceMm: z.number().finite().positive(), intent, revision }), async ({ id, edgeIds, distanceMm, intent: purpose, revision: current }) =>

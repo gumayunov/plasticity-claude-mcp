@@ -1209,6 +1209,12 @@ assignment with ID 0. Creation plus assignment is one native Undo step and is
 tracked by scene snapshots. These values control Plasticity display only; they
 are never accepted as evidence for filament, density, strength or print
 process.
+`plasticity_delete_appearance_materials` removes appearance materials from the
+document catalog by ID in one native Undo step. It refuses, before any change,
+a material that is still assigned to a body, or that Plasticity's native
+used-material set reports for a group or linked instance; reassign or clear it
+with `plasticity_set_appearance_material` first. The catalog change is tracked
+by scene snapshots.
 `plasticity_set_block_dimensions` applies Plasticity's native direct-dimension
 command to one Solid that the application still recognizes as a block. Width,
 length, and height use the block's local primitive axes; the edit keeps the

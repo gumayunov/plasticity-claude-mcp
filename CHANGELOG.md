@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add `plasticity_delete_appearance_materials`: delete unused appearance materials from the document catalog by ID in one native Undo step; assigned materials are refused before any change.
+- Fix clearing an appearance assignment with `materialId: 0` in `plasticity_set_appearance_material`: Plasticity 26.1.3 rejects 0 natively, the assignment is now cleared with `undefined`.
+
 ## 0.2.2 — 2026-10-11
 
 - Cache serialized body topology to avoid repeated native-wrapper allocation when reading an unchanged scene; retain live names, visibility and materials and invalidate on geometry/history changes (#2, #3).

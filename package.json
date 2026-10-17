@@ -107,6 +107,7 @@
     "accept:solid-properties": "node scripts/verify-native-solid-properties-live.ts",
     "accept:compact-observation": "node scripts/verify-compact-observation-live.ts",
     "accept:compact-diff-live": "node scripts/verify-compact-diff-live.ts",
+    "accept:appearance-delete-live": "node scripts/verify-appearance-material-delete-live.ts",
     "accept:section-strength": "node scripts/verify-section-strength-live.ts",
     "accept:parasolid-reference-download": "node scripts/verify-parasolid-reference-download-live.ts",
     "build:fem-solver": "docker build --platform=linux/arm64 -t plasticity-mcp-calculix:2.20 -f docker/fem/Dockerfile docker/fem",

@@ -2829,7 +2829,9 @@ test("lists and assigns native Plasticity appearance materials", async () => {
   assert.deepEqual(call?.bindings, []);
   assert.deepEqual(call?.values, [{ ids: [7], material: { materialId: 2 } }]);
   assert.match(call?.source ?? "", /selection\.selected\.removeAll\(\)/);
-  assert.match(call?.source ?? "", /editor\.db\.nodes\.setMaterial\(editor\.db\.nodes\.item2key\(view\), materialId\)/);
+  assert.match(call?.source ?? "", /editor\.db\.nodes\.setMaterial\(editor\.db\.nodes\.item2key\(view\), nativeMaterialId\)/);
+  // Plasticity 26.1.3 rejects 0 as "invalid material id"; undefined clears the assignment
+  assert.match(call?.source ?? "", /const nativeMaterialId = materialId === 0 \? undefined : materialId/);
 });
 
 test("creates bounded appearance materials through native document history", async () => {
@@ -2846,6 +2848,47 @@ test("creates bounded appearance materials through native document history", asy
   assert.match(call?.source ?? "", /editor\.db\.materials\.default\.clone\(\)/);
   assert.match(call?.source ?? "", /editor\.db\.materials\.add\(args\.material\.name, appearance\)/);
   assert.match(call?.source ?? "", /new this\.commands\.GroupSelectedCommand\(this\)/);
+});
+
+test("deletes unused appearance materials through one native history step", async () => {
+  let call: { source: string; bindings: string[]; values: unknown[] } | undefined;
+  const body = { id: 7, versionId: 17, type: "Solid", name: "Part", materialId: 3, boundsMm: null, faceIds: [], edgeIds: [], faces: [], edges: [] };
+  const materials = [
+    { id: 2, name: "Old", colorHex: "#3366cc", roughness: 0.5, metalness: 1, opacity: 1 },
+    { id: 3, name: "Used", colorHex: "#ff6600", roughness: 0.5, metalness: 0, opacity: 1 },
+    { id: 4, name: "Older", colorHex: "#999999", roughness: 0.5, metalness: 1, opacity: 1 },
+  ];
+  const state: RuntimeState = { targetId: "window-1", title: "Untitled - Plasticity", documentToken: "document-1", revision: "current-revision", dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [body], materials };
+  const runtime = { async getState() { return state; }, async mutate(source: string, bindings: string[], values: unknown[]) { call = { source, bindings, values }; return {}; } } as unknown as PlasticityRuntime;
+  const operations = new PlasticityOperations(runtime);
+
+  await operations.deleteAppearanceMaterials([2, 4], state.revision);
+
+  assert.deepEqual(call?.bindings, []);
+  assert.deepEqual(call?.values, [{ ids: [2, 4] }]);
+  assert.match(call?.source ?? "", /editor\.db\.nodes\.findAllUsedMaterials\(\)/);
+  assert.match(call?.source ?? "", /editor\.db\.materials\.remove\(id\)/);
+  assert.match(call?.source ?? "", /new this\.commands\.GroupSelectedCommand\(this\)/);
+});
+
+test("rejects stale, empty, duplicate, unknown, and assigned appearance material deletes before mutation", async () => {
+  let mutations = 0;
+  const body = { id: 7, versionId: 17, type: "Solid", name: null, materialId: 3, boundsMm: null, faceIds: [], edgeIds: [], faces: [], edges: [] };
+  const materials = [
+    { id: 2, name: "Old", colorHex: "#3366cc", roughness: 0.5, metalness: 1, opacity: 1 },
+    { id: 3, name: "Used", colorHex: "#ff6600", roughness: 0.5, metalness: 0, opacity: 1 },
+  ];
+  const state: RuntimeState = { targetId: "window-1", title: "Untitled - Plasticity", documentToken: "document-1", revision: "current-revision", dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [body], materials };
+  const runtime = { async getState() { return state; }, async mutate() { mutations += 1; return {}; } } as unknown as PlasticityRuntime;
+  const operations = new PlasticityOperations(runtime);
+
+  await assert.rejects(operations.deleteAppearanceMaterials([2], "old-revision"), /stale reference/i);
+  await assert.rejects(operations.deleteAppearanceMaterials([], state.revision), /at least one appearance material/i);
+  await assert.rejects(operations.deleteAppearanceMaterials([2, 2], state.revision), /unique/i);
+  await assert.rejects(operations.deleteAppearanceMaterials([0], state.revision), /positive/i);
+  await assert.rejects(operations.deleteAppearanceMaterials([2, 9], state.revision), /unknown current appearance materials: 9/i);
+  await assert.rejects(operations.deleteAppearanceMaterials([2, 3], state.revision), /still assigned.*3.*body 7/i);
+  assert.equal(mutations, 0);
 });
 
 test("rejects stale, missing, duplicate, and invalid appearance references before mutation", async () => {
