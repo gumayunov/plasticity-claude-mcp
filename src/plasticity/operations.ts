@@ -9670,8 +9670,11 @@ export class PlasticityOperations {
     await this.saveCopy(backupPath);
     // editor.open is what File > Open runs: unlike OpenFileFactory it also resets Undo history and
     // the unsaved-changes flag, so Undo cannot reach edits made in the previous document.
+    // The current document was just written to backupPath, so skip the unsaved-changes prompt:
+    // it is a modal dialog that would block the renderer until someone clicks it.
     const opened = await this.runtime.mutate<{ filename: string }>(`async function (args) {
       if (this.executor.isBusy) throw new Error('Plasticity is busy');
+      this._hasUnsavedChanges = false;
       await this.open(args.path);
       return { filename: this.document.filename };
     }`, [], [{ path: input }], LONG_NATIVE_IMPORT_TIMEOUT_MS);
