@@ -4,6 +4,7 @@
 
 - Add `plasticity_delete_appearance_materials`: delete unused appearance materials from the document catalog by ID in one native Undo step; assigned materials are refused before any change.
 - Fix clearing an appearance assignment with `materialId: 0` in `plasticity_set_appearance_material`: Plasticity 26.1.3 rejects 0 natively, the assignment is now cleared with `undefined`.
+- Fix `plasticity_set_visibility` and `plasticity_set_locked` leaving the viewport on the previous state: the transaction now recomputes the scene cache and rebuilds the render list like native visibility commands, so hidden bodies disappear, shown ones appear, locked ones stop being pickable, and Undo/Redo restore the matching frame (#14).
 
 ## 0.2.2 — 2026-10-11
 

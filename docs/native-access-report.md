@@ -1237,7 +1237,11 @@ Group creation and every hierarchy edit run inside Plasticity's command
 history. Names must be assigned inside the same command transaction: assigning
 them after `exec()` advances the document outside the stored memento and can
 lose the name on Undo. Visibility and lock state use the native node database
-inside the same transaction. Runtime state includes these flags for bodies,
+inside the same transaction. Writing the node flags alone leaves the viewport on
+the previous state: native visibility commands run `SceneVisibilityManager.update`
+(visible, selectable and drawable lists) and rebuild the `RenderList` before
+history saves the memento, so the adapter does both in the same transaction.
+Runtime state includes these flags for bodies,
 instances, and groups, and group hierarchy contributes to the document
 revision so stale references are rejected after manual or agent changes.
 `ActivateGroupCommand` changes the native active creation destination in one
