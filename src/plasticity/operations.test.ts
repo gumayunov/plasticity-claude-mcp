@@ -848,6 +848,8 @@ test("opens and backs up large documents with the long native timeout instead of
     assert(timeouts.every((timeout) => timeout !== undefined && timeout >= 60_000), `expected long timeouts, got ${timeouts.join(", ")}`);
     // File > Open path: resets Undo history and the unsaved-changes flag of the previous document.
     assert.match(calls[1]?.source ?? "", /await this\.open\(args\.path\)/u);
+    // The backup is already written, so the unsaved-changes prompt (a modal that blocks the renderer) is skipped.
+    assert.match(calls[1]?.source ?? "", /this\._hasUnsavedChanges = false;[\s\S]*await this\.open\(args\.path\)/u);
     assert.deepEqual(calls[1]?.bindings, []);
 
     openedFilename = join(root, "other.plasticity");
