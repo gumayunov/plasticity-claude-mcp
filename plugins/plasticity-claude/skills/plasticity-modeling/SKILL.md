@@ -28,6 +28,9 @@ Plasticity is driven over a loopback CDP connection. Units are millimetres and d
 - `plasticity_create_rib` takes the extrusion direction from the profile normal, which follows the point winding. Check the bounds after the first rib; if it went the wrong way, undo and either reverse the point order or use `plasticity_extrude_profile` with a negative distance, then `plasticity_boolean` union.
 - `plasticity_measure_solid_properties` takes `ids` (an array) and `revision`. Volume, area and `volumeCentroidMm` (the kernel's centre of volume) are exact; so are area, boundary length and `areaCentroidMm` from `plasticity_measure_face_properties`.
 - `plasticity_revolve_profile` fails with `PK_ERROR_impossible_spin` when a profile edge lies on the axis. For a solid of revolution draw an open polyline (`closed: false`) that starts and ends on the axis, with the whole profile on one side of it.
+- Helices and printed threads take whole turns only: a fractional turn count or a non-whole `length / pitch` is refused before any geometry is built. Do not adjust the dimensions or the pitch without asking the user.
+- `plasticity_mirror` with `keepOriginal: false` deletes the source bodies, so only the reflected copies remain.
+- `plasticity_screenshot` with `captureMode: "viewport"` captures a fresh WebGL frame even when the window is hidden, without HTML labels or panels. The default `window` mode needs a visible window.
 - Prefer `plasticity_find_edges` / `plasticity_find_faces` with bounds or a centre to pick fillet and chamfer targets. `plasticity_body_info` pages faces, edges and vertices (`include`, `offset`, `limit`, `expectedRevision`); read only the collection you need.
 
 ## Typical part

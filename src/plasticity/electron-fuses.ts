@@ -29,7 +29,7 @@ export async function assertNodeInspectorEnabled(applicationPath: string): Promi
         }
         const state = wire[2 + NODE_CLI_INSPECT_INDEX];
         if (state !== 0x31) {
-          throw new Error("This Plasticity build disables or removes EnableNodeCliInspectArguments. The MCP launcher requires --inspect-brk support and cannot start this build with MCP access. The live-tested Plasticity version is 26.1.3. See https://github.com/Mesteriis/plasticity-mcp/issues/10");
+          throw new Error("This Plasticity build disables or removes EnableNodeCliInspectArguments. The MCP launcher requires --inspect-brk support and cannot start this build with MCP access. Live-tested Plasticity versions: 26.1.3 and 26.1.4. See https://github.com/Mesteriis/plasticity-mcp/issues/10");
         }
       }
       if (bytesRead <= CHUNK_SIZE) break;
