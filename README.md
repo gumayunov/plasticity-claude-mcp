@@ -14,7 +14,7 @@
 
 Control Plasticity from an MCP client: inspect and measure native CAD geometry, create and edit models, and export the result. An optional Workbench supports model review, dimensional feedback, and print preparation.
 
-**Runs locally on macOS Apple Silicon with Plasticity 26.1.3, with experimental adapter support for a separately prepared 26.2.1 copy.** The MCP server connects to a Plasticity window selected by the user; it cannot run as a standalone cloud CAD service.
+**Runs locally on macOS Apple Silicon with Plasticity 26.1.4 (live-tested in this fork; upstream tested 26.1.3). The standard 26.2 build disables the Node inspector, so MCP cannot connect to it; upstream adds experimental adapter support for a separately prepared 26.2.1 copy, which has not been tested in this fork.** The MCP server connects to a Plasticity window selected by the user; it cannot run as a standalone cloud CAD service.
 
 | CAD workflow | What the server provides |
 | --- | --- |
@@ -38,7 +38,7 @@ See the [full tool reference](docs/tool-reference.md), [acceptance matrix](docs/
 ## Requirements
 
 - macOS on Apple Silicon
-- Plasticity 26.1.3 installed at `/Applications/Plasticity.app`
+- Plasticity 26.1.4 or 26.1.3 installed at `/Applications/Plasticity.app`
 - Node.js 24 or newer
 - Claude Code (or Codex CLI for the upstream Codex plugin)
 
