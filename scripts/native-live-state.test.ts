@@ -35,3 +35,32 @@ test("acceptance follows revision-bound body pages and rejects duplicate or cycl
   await assert.rejects(hydrateNativeState(first, unused, async () => ({ ...second, bodyPagination: { nextOffset: 1 } })), /did not advance/);
   await assert.rejects(hydrateNativeState(first, unused, async () => ({ ...second, revision: "r2" })), /Document changed/);
 });
+
+test("acceptance reads complete topology when body info answers with one page", async () => {
+  const state = { documentToken: "doc", revision: "r1", undoDepth: 0, bodies: [{ id: 7 }, { id: 8 }] };
+  const paged = (id: number) => ({
+    documentToken: "doc", revision: "r1", body: { id, faces: [{ id: "f1" }] },
+    pagination: { faces: { nextOffset: 50 }, edges: { nextOffset: null }, vertices: { nextOffset: null } },
+  });
+  const full = (id: number) => ({ id, faceIds: ["f1", "f2"], edgeIds: ["e1"], faces: [{ id: "f1" }, { id: "f2" }], edges: [{ id: "e1" }] });
+  const offsets: number[] = [];
+  const result = await hydrateNativeState(state, async (id) => paged(id), async (offset, revision) => {
+    assert.equal(revision, "r1"); offsets.push(offset);
+    return { documentToken: "doc", revision: "r1", bodies: [full(7), full(8)].slice(offset), bodyPagination: { nextOffset: null } };
+  });
+  assert.deepEqual(result.bodies, [full(7), full(8)]);
+  assert.deepEqual(offsets, [0, 1]);
+  await assert.rejects(hydrateNativeState(state, async (id) => paged(id), async () => ({ documentToken: "doc", revision: "r2", bodies: [full(7)] })), /Document changed/);
+});
+
+test("acceptance derives topology IDs from a complete body info page and refuses a truncated one", async () => {
+  const state = { documentToken: "doc", revision: "r1", undoDepth: 0, bodies: [{ id: 7 }] };
+  const page = (nextOffset: number | null) => ({
+    documentToken: "doc", revision: "r1", body: { id: 7, faces: [{ id: "f1" }], edges: [{ id: "e1" }] },
+    pagination: { faces: { nextOffset }, edges: { nextOffset: null }, vertices: { nextOffset: null } },
+  });
+  const result = await hydrateNativeState(state, async () => page(null));
+  assert.deepEqual(result.bodies[0].faceIds, ["f1"]);
+  assert.deepEqual(result.bodies[0].edgeIds, ["e1"]);
+  await assert.rejects(hydrateNativeState(state, async () => page(50)), /requires all body pages/);
+});

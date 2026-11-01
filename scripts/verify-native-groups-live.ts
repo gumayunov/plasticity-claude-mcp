@@ -199,10 +199,10 @@ async function main(): Promise<void> {
     requireExactIds(rereadSelection.instanceIds, [instanceId], "re-read selected instances");
     requireExactIds(rereadSelection.groupIds, [bracketGroup.id], "re-read selected groups");
     const topologyBody = bodyById(state, bracketId);
-    const faceReference = { bodyId: bracketId, faceId: topologyBody.faces[0].id };
+    const faceReference = { bodyId: bracketId, faceId: topologyBody.faceIds[0] };
     const faceSelection = await call(live.client, "plasticity_select_faces", { faces: [faceReference], revision: state.revision });
     requireCondition(faceSelection.faces.length === 1 && faceSelection.faces[0].bodyId === bracketId && faceSelection.faces[0].faceId === faceReference.faceId, "Exact face selection did not round-trip");
-    const edgeReference = { bodyId: bracketId, edgeId: topologyBody.edges[0].id };
+    const edgeReference = { bodyId: bracketId, edgeId: topologyBody.edgeIds[0] };
     const edgeSelection = await call(live.client, "plasticity_select_edges", { edges: [edgeReference], revision: state.revision });
     requireCondition(edgeSelection.edges.length === 1 && edgeSelection.edges[0].bodyId === bracketId && edgeSelection.edges[0].edgeId === edgeReference.edgeId, "Exact edge selection did not round-trip");
 
