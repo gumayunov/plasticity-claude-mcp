@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix `curveIds` in `plasticity_current_selection` and `plasticity_select_curves`: they returned the native version ID instead of the body ID, so the value differed from `bodyIds` after other edits and could point at another body.
 - Merge upstream `0bcbe2a`. Fixes that apply on 26.1: `plasticity_mirror` with `keepOriginal: false`, opening documents with unsaved changes, region patch leaving an interactive move pending, periodic curved faces, shell unjoin and vertex offset, measurement labels, MMB arm thickness (older records stay readable by version), interface failure location labels, ASCII STL with several solids, and a clear launcher error when Plasticity disables the Node inspector fuse.
 - Behaviour changes: a failed `plasticity_open_document` leaves the document under its backup name; helices and printed threads refuse fractional turns before building geometry; bodies report `boundsMethod`; `plasticity_screenshot` adds `captureMode: viewport`; curve imprint adds normal projection.
 - The topology cache format changed, so revisions differ after updating: re-read `plasticity_status`. Older construction history stays readable.
