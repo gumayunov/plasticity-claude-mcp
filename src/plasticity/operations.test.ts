@@ -913,6 +913,68 @@ test("saves the open document over its own file through the native editor save",
   }
 });
 
+test("renderer sources reach native stores only through nativeApi", async () => {
+  const source = await readFile(new URL("./operations.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /\beditor\.(db|geo)\b|\bthis\.(db|geo)\b/);
+});
+
+test("document opening reads only the file header", async () => {
+  const root = await mkdtemp(join(tmpdir(), "plasticity-open-test-"));
+  const input = join(root, "huge.plasticity");
+  const header = Buffer.alloc(24); header.write("plasticity");
+  await writeFile(input, header);
+  // Sparse and larger than readFile accepts: the header check must not load the document.
+  await truncate(input, 3 * 1024 * 1024 * 1024);
+  const state: RuntimeState = { targetId: "window-1", title: "Fixture", documentToken: "document-1", revision: "r1", dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [] };
+  const runtime = {
+    async getState() { return state; },
+    async mutate() { return { filename: await realpath(input) }; },
+  } as unknown as PlasticityRuntime;
+  const operations = new PlasticityOperations(runtime);
+  operations.saveCopy = async (path: string) => { await writeFile(path, header); return { path, bytes: header.length, revision: "r1" }; };
+  try {
+    await operations.openDocument(input, join(root, "backup.plasticity"), "r1");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("saving refuses the previous path after a failed open", async () => {
+  const root = await realpath(await mkdtemp(join(tmpdir(), "plasticity-open-test-")));
+  const previous = join(root, "previous.plasticity");
+  const input = join(root, "next.plasticity");
+  const backup = join(root, "backup.plasticity");
+  const header = Buffer.alloc(24); header.write("plasticity");
+  await writeFile(previous, "previous-content");
+  await writeFile(input, header);
+  let saves = 0;
+  const editor = {
+    executor: { isBusy: false },
+    document: { filename: previous },
+    async save() { saves += 1; },
+    async open() { throw new Error("native open failed"); },
+  };
+  const state: RuntimeState = { targetId: "window-1", title: "Fixture", documentToken: "document-1", revision: "r1", dbVersion: 1, undoDepth: 0, redoDepth: 0, construction: emptyConstruction, regions: [], bodies: [] };
+  const runtime = {
+    async getState() { return state; },
+    async read(source: string) { return await Function(`return (${source})`)().apply(editor, []); },
+    async mutate(source: string, _bindings: string[], values: unknown[]) { return await Function(`return (${source})`)().apply(editor, values); },
+    isUncertain() { return false; },
+  } as unknown as PlasticityRuntime;
+  const operations = new PlasticityOperations(runtime);
+  operations.saveCopy = async (path: string) => { await writeFile(path, header); return { path, bytes: header.length, revision: "r1" }; };
+  try {
+    await assert.rejects(operations.openDocument(input, backup, "r1"), /native open failed/u);
+    assert.equal(editor.document.filename, backup, "the failed open leaves the document under its backup name");
+    const savesAfterOpen = saves;
+    await assert.rejects(operations.saveDocument(previous, "r1"), /refusing to save over a different file/u);
+    assert.equal(saves, savesAfterOpen, "a refused save must not reach Plasticity");
+    assert.equal(await readFile(previous, "utf8"), "previous-content");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("opens and backs up large documents with the long native timeout instead of the 10 s CDP default", async () => {
   const root = await mkdtemp(join(tmpdir(), "plasticity-open-test-"));
   const input = join(await realpath(root), "large.plasticity");
@@ -2981,8 +3043,8 @@ test("deletes unused appearance materials through one native history step", asyn
 
   assert.deepEqual(call?.bindings, []);
   assert.deepEqual(call?.values, [{ ids: [2, 4] }]);
-  assert.match(call?.source ?? "", /editor\.db\.nodes\.findAllUsedMaterials\(\)/);
-  assert.match(call?.source ?? "", /editor\.db\.materials\.remove\(id\)/);
+  assert.match(call?.source ?? "", /nativeApi\.db\.nodes\.findAllUsedMaterials\(\)/);
+  assert.match(call?.source ?? "", /nativeApi\.db\.materials\.remove\(id\)/);
   assert.match(call?.source ?? "", /new this\.commands\.GroupSelectedCommand\(this\)/);
 });
 

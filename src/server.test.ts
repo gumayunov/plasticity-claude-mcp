@@ -1339,6 +1339,9 @@ test("Codex tool router catalogs and validates every registered operation", asyn
   assert.deepEqual((exactName.tools as Array<{ name: string }>).map((item) => item.name), ["plasticity_create_through_hole"],
     "an exact name selects that operation even when other names contain it");
   assert.equal(JSON.stringify(exactName).includes("prefixItems"), false, "uniform vectors are exported as fixed-length arrays");
+  const saveEntry = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "plasticity_save" } }));
+  assert.deepEqual((saveEntry.tools as Array<{ name: string }>).map((item) => item.name), ["plasticity_save"]);
+  assert.ok("expectedPath" in ((saveEntry.tools as Array<{ inputSchema: { properties: object } }>)[0]!.inputSchema.properties));
 
   const invalid = await client.callTool({ name: "plasticity_call", arguments: {
     toolName: "plasticity_create_box",
@@ -2955,7 +2958,7 @@ test("durable construction history survives MCP recreation and detects manual re
   await secondClient.close(); await secondServer.close();
 });
 
-async function createBoxResponse(options?: ServerOptions): Promise<{ result: any; state: RuntimeState; boundsMm: { min: [number, number, number]; max: [number, number, number] } }> {
+async function createBoxResponse(options?: ServerOptions, boundsMethod?: "native-box" | "native-extrema"): Promise<{ result: any; state: RuntimeState; boundsMm: { min: [number, number, number]; max: [number, number, number] } }> {
   const boundsMm = { min: [0, 0, 0] as [number, number, number], max: [1, 1, 1] as [number, number, number] };
   const face = {
     id: "face-1", surfaceType: "plane", planar: true, centerMm: [0, 0, 0] as [number, number, number],
@@ -2968,7 +2971,7 @@ async function createBoxResponse(options?: ServerOptions): Promise<{ result: any
     boundsMm, faceIds: ["face-1"], vertexIds: [1, 2],
   };
   const makeBody = (id: number): RuntimeState["bodies"][number] => ({
-    id, versionId: id + 100, type: "Solid", name: `Body ${id}`, boundsMm,
+    id, versionId: id + 100, type: "Solid", name: `Body ${id}`, boundsMm, ...(boundsMethod ? { boundsMethod } : {}),
     faceIds: ["face-1"], edgeIds: ["edge-1"], faces: [face], edges: [edge],
     vertices: [{ id: 1, positionMm: [0, 0, 0], edgeIds: ["edge-1"], faceIds: ["face-1"] }],
   });
@@ -3033,6 +3036,13 @@ test("changes-only mutation responses return what changed instead of the scene s
     faceCount: 1, edgeCount: 1, vertexCount: 1,
   }]);
   assert.equal(result.change.sceneChanged, true);
+});
+
+test("changes-only bodies carry boundsMethod only when known", async () => {
+  const known = await createBoxResponse({ mutationResponses: "changes" }, "native-box");
+  assert.equal(known.result.change.added[0].boundsMethod, "native-box");
+  const unknown = await createBoxResponse({ mutationResponses: "changes" });
+  assert.equal("boundsMethod" in unknown.result.change.added[0], false);
 });
 
 test("body info pages faces, edges, and vertices of one body and rejects pages from another revision", async () => {

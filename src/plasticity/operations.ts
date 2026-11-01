@@ -4816,14 +4816,13 @@ export class PlasticityOperations {
     if (assigned.length > 0) {
       throw new Error(`Appearance materials are still assigned: ${assigned.join("; ")}. Reassign or clear them with plasticity_set_appearance_material first`);
     }
-    await this.runtime.mutate(`async function (args) {
+    await this.runtime.mutate(nativeFunction`async function (args) {
       if (this.executor.isBusy) throw new Error('Plasticity is busy');
-      const editor = this;
       // groups and linked instances can hold a material too; the native set covers every node
-      const used = editor.db.nodes.findAllUsedMaterials();
+      const used = nativeApi.db.nodes.findAllUsedMaterials();
       const inUse = args.ids.filter(id => used.has(id));
       if (inUse.length > 0) throw new Error('Appearance materials are still in use by groups or instances: ' + inUse.join(', '));
-      const gone = args.ids.filter(id => !editor.db.materials.has(id));
+      const gone = args.ids.filter(id => !nativeApi.db.materials.has(id));
       if (gone.length > 0) throw new Error('Appearance material IDs are no longer current: ' + gone.join(', '));
       this.selection.selected.removeAll();
       let failure;
@@ -4833,7 +4832,7 @@ export class PlasticityOperations {
       command.execute = async function () {
         ran = true;
         try {
-          for (const id of args.ids) editor.db.materials.remove(id);
+          for (const id of args.ids) nativeApi.db.materials.remove(id);
         } catch (error) {
           failure = error;
           throw error;
