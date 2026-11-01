@@ -4,6 +4,11 @@ Main check date: 2026-09-27; centroids and the topology cache were additionally 
 run from features for which this Mac lacks the required device or
 application.
 
+Upstream continued this audit on separate Plasticity 26.1.3 and experimental 26.2.1 copies; see
+[26.2 compatibility](plasticity-26-2-compatibility.md) and
+[retained failure dispositions](catalog-failure-dispositions.md). Those results are upstream's and were
+not repeated in this fork.
+
 | Requirement | Status | Check |
 | --- | --- | --- |
 | Native access to Plasticity 26.1.3 | Verified | CDP on loopback only; native editor and factories discovered without changing the `.app` |

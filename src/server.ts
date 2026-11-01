@@ -94,6 +94,7 @@ function compactChangedBody(body: RuntimeState["bodies"][number]) {
     type: body.type,
     name: body.name,
     boundsMm: body.boundsMm,
+    ...(body.boundsMethod ? { boundsMethod: body.boundsMethod } : {}),
     faceCount: body.faces.length,
     edgeCount: body.edges.length,
     vertexCount: body.vertices?.length ?? null,
@@ -418,14 +419,14 @@ const surfaceFaceRefs = z.array(faceRef).min(1).max(4096).refine(
 );
 const curveControlPointRef = z.discriminatedUnion("kind", [
   z.object({ bodyId: z.number().int().positive(), kind: z.literal("vertex"), pointId: z.number().int().nonnegative() }).strict(),
-  z.object({ bodyId: z.number().int().positive(), kind: z.literal("control-point"), pointId: z.number().int().positive() }).strict(),
+  z.object({ bodyId: z.number().int().positive(), kind: z.literal("control-point"), pointId: z.number().int().nonnegative() }).strict(),
 ]);
 const curveControlPointRefs = z.array(curveControlPointRef).min(1).max(4096).refine(
   (values) => new Set(values.map((value) => `${value.bodyId}:${value.kind}:${value.pointId}`)).size === values.length,
   "Curve control point references must be unique",
 );
 const interiorCurveControlPointRefs = z.array(
-  z.object({ bodyId: z.number().int().positive(), kind: z.literal("control-point"), pointId: z.number().int().positive() }).strict(),
+  z.object({ bodyId: z.number().int().positive(), kind: z.literal("control-point"), pointId: z.number().int().nonnegative() }).strict(),
 ).min(1).max(4096).refine(
   (values) => new Set(values.map((value) => `${value.bodyId}:${value.pointId}`)).size === values.length,
   "Interior curve control point references must be unique",
@@ -1741,6 +1742,7 @@ function compactJournalChange(diff: SceneDiff | null): ConstructionHistoryEntry[
     type: body.type,
     name: body.name,
     boundsMm: body.boundsMm,
+    ...(body.boundsMethod ? { boundsMethod: body.boundsMethod } : {}),
     faceCount: body.faces.length,
     edgeCount: body.edges.length,
   });
@@ -2443,7 +2445,7 @@ function createServerWithCatalog(
   tool("plasticity_list_windows", "List Plasticity document windows exposed on loopback CDP.", z.object({}), async () =>
     (await session.windows()).map(({ id, title, url }) => ({ targetId: id, title, url })), true);
   tool("plasticity_diagnose", "Report MCP runtime and reachable Plasticity windows without changing a document.", z.object({}), async () =>
-    ({ node: process.version, platform: process.platform, architecture: process.arch, supportedPlasticity: "26.1.3", endpoint: process.env.PLASTICITY_CDP_URL ?? "http://127.0.0.1:9223", windows: await session.windows() }), true);
+    ({ node: process.version, platform: process.platform, architecture: process.arch, supportedPlasticity: "26.1.4", experimentalPlasticity: ["26.2.1"], endpoint: process.env.PLASTICITY_CDP_URL ?? "http://127.0.0.1:9223", windows: await session.windows() }), true);
   tool("plasticity_resolve_fastener_designation", "Interpret a bounded fastening request such as 'крепится на 4 болта M5x10 с гайками' or 'печать винта M6x20 и ответной части'. It defaults to combined strength and geometry intent, parses thread metadata, quantity, selected ISO/DIN head and drive family, explicit joint phrases and fixed/adjustable/pivot intent, and returns one active question package plus compatible Plasticity geometry/strength tools. Its bounded catalog recognizes common hex, socket-cap, button, pan, countersunk and headless set-screw standards with source URLs; set-screw standards also identify flat, truncated-cone, dog, or cup points and require the mating contact function to be resolved. Printed screw, nut, and generic mating-part phrases route to the custom matched-thread tools without importing an ISO pitch. A slot is proposed only for explicit adjustment. It never treats nominal thread diameter as a finished hole, insert pocket, head recess, or nut envelope.", fastenerDesignationInputSchema, async (input) =>
     resolveFastenerDesignation(input), true);
   tool("plasticity_record_printed_thread_qualification", "Persist an immutable physically tested rounded-print-v1 thread fit for one exact printer, material, slicer profile, nozzle, layer height, orientation, and thread definition. Requires explicit confirmation that a real specimen completed full-travel testing; geometric interference checks alone are not accepted. Repeating the same record is idempotent.", printedThreadQualificationInputSchema, async (input) =>
@@ -2722,11 +2724,11 @@ function createServerWithCatalog(
   for (const name of ["plasticity_get_cad_reference_import", "plasticity_get_step_import"] as const) {
     tool(name, "Read one persistent CAD reference import provenance record (STEP, Parasolid, or 3MF). STEP and Parasolid records contain exact native B-Rep measurements; 3MF records contain approximate reference-mesh bounds and topology counts, not editable B-Rep. The record is historical; verify the current scene before using any stored body or mesh ID.", z.object({ id: z.string().uuid() }).strict(), getImportReference, true);
   }
-  tool("plasticity_measure", "Measure a body's axis-aligned native B-Rep bounds in millimeters.", z.object({ id: z.number().int().positive() }), async ({ id }) => {
+  tool("plasticity_measure", "Measure a body's native B-Rep bounds in millimeters. boundsMethod identifies native-extrema (tight native support extrema) or native-box (conservative legacy/curve box); do not treat the conservative box as an exact physical envelope.", z.object({ id: z.number().int().positive() }), async ({ id }) => {
     const state = await session.get().state();
     const body = state.bodies.find((candidate) => candidate.id === id);
     if (!body?.boundsMm) throw new Error(`Body has no native B-Rep bounds: ${id}`);
-    return { id, revision: state.revision, source: "native-brep", boundsMm: body.boundsMm, sizeMm: body.boundsMm.max.map((value, index) => value - body.boundsMm!.min[index]!) };
+    return { id, revision: state.revision, source: "native-brep", boundsMethod: body.boundsMethod ?? "unknown", boundsMm: body.boundsMm, sizeMm: body.boundsMm.max.map((value, index) => value - body.boundsMm!.min[index]!) };
   }, true);
   tool("plasticity_measure_point_distance", "Measure the exact straight-line distance and XYZ delta between two explicit coordinates or current native B-Rep vertices, edge midpoints, or face points. Topology references are revision-bound.", z.object({ first: measurementPointRef, second: measurementPointRef, revision }).strict(), async ({ first, second, revision: current }) =>
     await session.get().measurePointDistance(first, second, current), true);
@@ -2816,7 +2818,7 @@ function createServerWithCatalog(
     await journaled("set-locked", purpose, { bodyIds, instanceIds: currentInstanceIds, referenceMeshIds: currentReferenceMeshIds, groupIds: currentGroupIds, locked }, () => session.get().setNodeLocked(bodyIds, currentInstanceIds, currentReferenceMeshIds, currentGroupIds, locked, current)));
   tool("plasticity_validate_bodies", "Run Plasticity's native B-Rep Check and report exact topology closure and solid printability for current revision-bound bodies.", z.object({ ids, revision }).strict(), async ({ ids: bodyIds, revision: current }) =>
     await session.get().validateBodies(bodyIds, current), true);
-  tool("plasticity_capabilities", "Page through native renderer bindings found in Plasticity 26.1.3. Defaults to 100 bindings per page; filter by case-insensitive substring with query. Returns total and matching counts plus nextOffset so large binding lists do not flood MCP context.", z.object({
+  tool("plasticity_capabilities", "Page through native renderer bindings found in the connected Plasticity build. Defaults to 100 bindings per page; filter by case-insensitive substring with query. Returns total and matching counts plus nextOffset so large binding lists do not flood MCP context.", z.object({
     query: z.string().trim().min(1).max(200).optional(),
     offset: z.number().int().nonnegative().default(0),
     limit: z.number().int().min(1).max(250).default(100),
@@ -2895,15 +2897,15 @@ function createServerWithCatalog(
     await journaled("recipe-hex-nut-pocket", purpose, input, () => new PlasticityRecipes(session.get()).createHexNutPocket(input)));
   tool("plasticity_create_hex_nut_pocket_pattern", "Cut 2-128 equal blind regular-hex nut pockets at explicit entry centers on one current Solid. Each center creates one editable profile and one extruded cutter; one final Boolean consumes every cutter while preserving the source Wires. Across-flats size, depth, orientation, clearance, and material depth must come from the selected nut and manufacturing process.", hexNutPocketPatternInputSchema, async ({ intent: purpose, ...input }) =>
     await journaled("recipe-hex-nut-pocket-pattern", purpose, input, () => new PlasticityRecipes(session.get()).createHexNutPocketPattern(input)));
-  tool("plasticity_create_printed_external_thread", "Create a standalone exact one-start rounded thread intended for a matched printed part. It creates and preserves a native Helix, forms the ridge with Pipe and Boolean, and clips the result to the explicit crest diameter and length. Nominal diameter is geometry only: this rounded-print profile is not an ISO metric thread and needs printer/material/profile-qualified depth and pitch.", printedExternalThreadInputSchema, async ({ intent: purpose, ...input }) =>
+  tool("plasticity_create_printed_external_thread", "Create a standalone exact one-start rounded thread intended for a matched printed part. It creates and preserves a native Helix, forms the ridge with Pipe and Boolean, and clips the result to the explicit crest diameter and length. threadLengthMm/pitchMm must be a whole number. Nominal diameter is geometry only: this rounded-print profile is not an ISO metric thread and needs printer/material/profile-qualified depth and pitch.", printedExternalThreadInputSchema, async ({ intent: purpose, ...input }) =>
     await journaled("recipe-printed-external-thread", purpose, input, () => new PrintedThreadRecipes(session.get()).createExternalThread(input)));
-  tool("plasticity_cut_printed_internal_thread", "Cut an exact one-start rounded internal thread into one current Solid for a matched printed external thread. The bore, helical groove, normal profile clearance, material depth and overshoot are explicit. This custom rounded-print profile is not an ISO tap and must not be assumed compatible from an M designation alone.", printedInternalThreadInputSchema, async ({ intent: purpose, ...input }) =>
+  tool("plasticity_cut_printed_internal_thread", "Cut an exact one-start rounded internal thread into one current Solid for a matched printed external thread. The bore, helical groove, normal profile clearance, material depth and overshoot are explicit. (materialDepthMm + 2*cutterOvershootMm)/pitchMm must be a whole number. This custom rounded-print profile is not an ISO tap and must not be assumed compatible from an M designation alone.", printedInternalThreadInputSchema, async ({ intent: purpose, ...input }) =>
     await journaled("recipe-printed-internal-thread", purpose, input, () => new PrintedThreadRecipes(session.get()).cutInternalThread(input)));
-  tool("plasticity_create_printed_hex_nut", "Create an exact extruded hex nut with a matched one-start rounded internal print thread. Across-flats size, thickness, minimum remaining wall, pitch, depth and normal profile clearance are explicit; the source hex Wire and Helix remain editable. It is a custom printed mating part, not an ISO nut unless a separate verified standard-profile workflow is used.", printedHexNutInputSchema, async ({ intent: purpose, ...input }) =>
+  tool("plasticity_create_printed_hex_nut", "Create an exact extruded hex nut with a matched one-start rounded internal print thread. (thicknessMm + 2*cutterOvershootMm)/pitchMm must be a whole number. Across-flats size, thickness, minimum remaining wall, pitch, depth and normal profile clearance are explicit; the source hex Wire and Helix remain editable. It is a custom printed mating part, not an ISO nut unless a separate verified standard-profile workflow is used.", printedHexNutInputSchema, async ({ intent: purpose, ...input }) =>
     await journaled("recipe-printed-hex-nut", purpose, input, () => new PrintedThreadRecipes(session.get()).createHexNut(input)));
-  tool("plasticity_create_printed_hex_screw", "Create an exact wrenchable hex-head screw with a standalone one-start rounded print thread. The thread is clipped to its explicit crest envelope and joined to an overlapping hex head; the source head Wire and Helix remain editable. This is a custom matched print profile and is not ISO metric hardware solely because its crest diameter is named M5 or similar.", printedHexScrewInputSchema, async ({ intent: purpose, ...input }) =>
+  tool("plasticity_create_printed_hex_screw", "Create an exact wrenchable hex-head screw with a standalone one-start rounded print thread. threadLengthMm/pitchMm must be a whole number. The thread is clipped to its explicit crest envelope and joined to an overlapping hex head; the source head Wire and Helix remain editable. This is a custom matched print profile and is not ISO metric hardware solely because its crest diameter is named M5 or similar.", printedHexScrewInputSchema, async ({ intent: purpose, ...input }) =>
     await journaled("recipe-printed-hex-screw", purpose, input, () => new PrintedThreadRecipes(session.get()).createHexScrew(input)));
-  tool("plasticity_create_printed_hex_pair", "Create a complete matched printable hex screw and nut from a designation such as 'printed M5x10 pair'. The designation supplies only crest diameter and screw thread length; pitch, rounded-profile depth, normal clearance, head and nut envelopes remain explicit and shared. Printer, material, slicer profile, nozzle, layer height, orientation, clearance evidence and sizing basis are recorded. An optional immutable physical qualification ID is checked against the exact process, thread definition, clearance, and required engagement before mutation. Without it, the result remains marked as requiring a physical fit test. This custom rounded-print-v1 pair is not ISO metric hardware.", printedHexPairInputSchema, async ({ designation, process, sizingBasis, qualificationId, intent: purpose, ...input }) => {
+  tool("plasticity_create_printed_hex_pair", "Create a complete matched printable hex screw and nut from a designation such as 'printed M5x10 pair'. Both screw length/pitch and extended nut cutter length/pitch must give whole turns; fractional turns are rejected before geometry creation. The designation supplies only crest diameter and screw thread length; pitch, rounded-profile depth, normal clearance, head and nut envelopes remain explicit and shared. Printer, material, slicer profile, nozzle, layer height, orientation, clearance evidence and sizing basis are recorded. An optional immutable physical qualification ID is checked against the exact process, thread definition, clearance, and required engagement before mutation. Without it, the result remains marked as requiring a physical fit test. This custom rounded-print-v1 pair is not ISO metric hardware.", printedHexPairInputSchema, async ({ designation, process, sizingBasis, qualificationId, intent: purpose, ...input }) => {
     const resolved = resolveFastenerDesignation({
       designation,
       jointIntent: "printed-threaded-pair",
@@ -2970,7 +2972,7 @@ function createServerWithCatalog(
       fitQualification,
     };
   });
-  tool("plasticity_create_printed_thread_calibration_set", "Create one custom rounded-print-v1 hex screw and 2-8 separate hex nuts with explicit, unique normal profile clearances. Use this process-specific clearance ladder before choosing the working fit for a printer, material, slicing profile, and orientation. The result remains unqualified until the specimens are physically printed and tested; it is not ISO metric hardware even when the crest diameter is written like M5.", printedThreadCalibrationInputSchema, async ({ designation, process, sizingBasis, intent: purpose, ...input }) => {
+  tool("plasticity_create_printed_thread_calibration_set", "Create one custom rounded-print-v1 hex screw and 2-8 separate hex nuts with explicit, unique normal profile clearances. Screw length/pitch and every extended nut cutter length/pitch must give whole turns; all turn constraints are checked before geometry creation. Use this process-specific clearance ladder before choosing the working fit for a printer, material, slicing profile, and orientation. The result remains unqualified until the specimens are physically printed and tested; it is not ISO metric hardware even when the crest diameter is written like M5.", printedThreadCalibrationInputSchema, async ({ designation, process, sizingBasis, intent: purpose, ...input }) => {
     const resolved = resolveFastenerDesignation({
       designation,
       jointIntent: "printed-threaded-pair",
@@ -3094,7 +3096,7 @@ function createServerWithCatalog(
     await journaled("create-slot-profiles", purpose, { wireIds, widthMm }, () => session.get().createSlotProfiles(wireIds, widthMm, current)));
   tool("plasticity_create_nurbs_curve", "Create a native interpolating NURBS curve through three or more world-space points in millimeters.", z.object({ pointsMm: z.array(vector).min(3).max(1000), closed: z.boolean().default(false), intent, revision }).strict(), async ({ pointsMm, closed, intent: purpose, revision: current }) =>
     await journaled("create-nurbs-curve", purpose, { pointsMm, closed }, () => session.get().createNurbsCurve(pointsMm, closed, current)));
-  tool("plasticity_create_helix", "Create a constant-radius native helix around a world-space axis. Coordinates and radius are millimeters.", z.object({ axisStartMm: vector, axisEndMm: vector, radiusMm: z.number().finite().positive(), turns: z.number().finite().positive().max(10_000), radialDirection: direction.default([1, 0, 0]), handedness: z.enum(["right", "left"]).default("right"), intent, revision }).strict(), async ({ axisStartMm, axisEndMm, radiusMm, turns, radialDirection, handedness, intent: purpose, revision: current }) =>
+  tool("plasticity_create_helix", "Create a constant-radius native helix with a positive whole number of turns around a world-space axis. Fractional turns are rejected before mutation because native spirals can overrun their requested end. Coordinates and radius are millimeters.", z.object({ axisStartMm: vector, axisEndMm: vector, radiusMm: z.number().finite().positive(), turns: z.number().finite().positive().max(10_000), radialDirection: direction.default([1, 0, 0]), handedness: z.enum(["right", "left"]).default("right"), intent, revision }).strict(), async ({ axisStartMm, axisEndMm, radiusMm, turns, radialDirection, handedness, intent: purpose, revision: current }) =>
     await journaled("create-helix", purpose, { axisStartMm, axisEndMm, radiusMm, turns, radialDirection, handedness }, () => session.get().createHelix(axisStartMm, axisEndMm, radiusMm, turns, radialDirection, handedness, current)));
   tool("plasticity_create_circle", "Create a native circle in world coordinates or a referenced construction plane.", circleInputSchema, async (input) =>
     await journaled("create-circle", input.intent, { centerMm: input.centerMm, radiusMm: input.radiusMm, plane: "plane" in input ? input.plane : undefined, normal: "normal" in input ? input.normal : undefined }, () =>
@@ -3447,18 +3449,22 @@ function createServerWithCatalog(
     await journaled("raise-surface-degree", purpose, { faces }, () => session.get().raiseSurfaceDegree(faces, current)));
   tool("plasticity_untrim_faces", "Restore selected current Solid or Sheet faces to the natural bounds of their carrier surfaces in one native history entry. The selected trim boundaries are discarded, the result can overlap neighboring geometry, and all topology references become stale; inspect surface structure, bounds, validation, and intersections before continuing.", z.object({ faces: surfaceFaceRefs, intent, revision }).strict(), async ({ faces, intent: purpose, revision: current }) =>
     await journaled("untrim-faces", purpose, { faces }, () => session.get().untrimFaces(faces, current)));
-  tool("plasticity_imprint_curves_on_body", "Project native Wire bodies onto a Solid or Sheet and split its exact faces along the projected curves.", z.object({
+  tool("plasticity_imprint_curves_on_body", "Project native Wire bodies onto a Solid or Sheet and split its faces. projectionMethod=vector (default) requires direction and may produce approximated SPCurve edges, including for circles. projectionMethod=normal uses native surface-normal projection and requires direction to be omitted; it preserves analytic circles in the qualified planar cases. Normal projection has different geometry semantics; it is never selected automatically.", z.object({
     targetId: z.number().int().positive(),
     curveIds: ids,
-    direction,
+    direction: direction.optional(),
+    projectionMethod: z.enum(["vector", "normal"]).default("vector"),
     bidirectional: z.boolean().default(false),
     occlude: z.boolean().default(true),
     completion: z.enum(["none", "edge", "face-set"]).default("none"),
     intent,
     revision,
-  }).strict(), async ({ targetId, curveIds, direction: imprintDirection, bidirectional, occlude, completion, intent: purpose, revision: current }) =>
-    await journaled("imprint-curves-on-body", purpose, { targetId, curveIds, direction: imprintDirection, bidirectional, occlude, completion }, () =>
-      session.get().imprintCurvesOnBody(targetId, curveIds, imprintDirection, { bidirectional, occlude, completion }, current)));
+  }).strict().superRefine((input, context) => {
+    if (input.projectionMethod === "vector" && input.direction === undefined) context.addIssue({ code: "custom", path: ["direction"], message: "Vector imprint requires direction" });
+    if (input.projectionMethod === "normal" && input.direction !== undefined) context.addIssue({ code: "custom", path: ["direction"], message: "Normal imprint requires direction to be omitted" });
+  }), async ({ targetId, curveIds, direction: imprintDirection, projectionMethod, bidirectional, occlude, completion, intent: purpose, revision: current }) =>
+    await journaled("imprint-curves-on-body", purpose, { targetId, curveIds, direction: imprintDirection, projectionMethod, bidirectional, occlude, completion }, () =>
+      session.get().imprintCurvesOnBody(targetId, curveIds, imprintDirection, { projectionMethod, bidirectional, occlude, completion }, current)));
   tool("plasticity_imprint_bodies", "Split a Solid or Sheet target along exact intersections with preserved Solid or Sheet tool bodies.", z.object({ targetId: z.number().int().positive(), toolIds: ids, intent, revision }).strict(), async ({ targetId, toolIds, intent: purpose, revision: current }) =>
     await journaled("imprint-bodies", purpose, { targetId, toolIds }, () => session.get().imprintBodies(targetId, toolIds, current)));
   tool("plasticity_sweep_regions", "Sweep one or more explicit closed Regions along a native Wire spine to create exact Solid geometry.", z.object({
@@ -3712,7 +3718,7 @@ function createServerWithCatalog(
     revision,
   }).strict(), async ({ ids: solidIds, wallThicknessMm, direction: shellDirection, intent: purpose, revision: current }) =>
     await journaled("hollow-solids", purpose, { ids: solidIds, wallThicknessMm, direction: shellDirection }, () => session.get().hollowSolids(solidIds, wallThicknessMm, shellDirection, current)));
-  tool("plasticity_mirror", "Mirror exact bodies across a world-space plane, either copying or moving the originals.", z.object({ ids, planeOriginMm: vector, planeNormal: direction, keepOriginal: z.boolean().default(true), intent, revision }), async ({ ids: bodyIds, planeOriginMm, planeNormal, keepOriginal, intent: purpose, revision: current }) =>
+  tool("plasticity_mirror", "Mirror whole bodies across a world-space plane. keepOriginal=true preserves the sources; false replaces them with reflected bodies. Either mode uses one native history step.", z.object({ ids, planeOriginMm: vector, planeNormal: direction, keepOriginal: z.boolean().default(true), intent, revision }), async ({ ids: bodyIds, planeOriginMm, planeNormal, keepOriginal, intent: purpose, revision: current }) =>
     await journaled("mirror", purpose, { bodyIds, planeOriginMm, planeNormal, keepOriginal }, () => session.get().mirror(bodyIds, planeOriginMm, planeNormal, keepOriginal, current)));
   tool("plasticity_rectangular_pattern", "Create a native rectangular body pattern using counts and center-to-center spacing in millimeters.", z.object({
     ids,
@@ -3747,13 +3753,13 @@ function createServerWithCatalog(
 
   tool("plasticity_set_view", "Set a named viewport orientation and optionally fit all geometry.", z.object({ view: z.enum(["front", "back", "left", "right", "top", "bottom", "isometric"]), fit: z.boolean().default(false) }), async ({ view, fit }) =>
     await session.get().setView(view, fit));
-  tool("plasticity_screenshot", "Save a PNG screenshot of the visible Plasticity renderer viewport to a new file without overwriting. Refuses hidden windows to avoid stale frames.", z.object({ path: z.string().min(1) }), async ({ path }) =>
-    await session.get().screenshot(path), false, { destructiveHint: false });
+  tool("plasticity_screenshot", "Save a PNG to a new file without overwriting. captureMode=window (default) captures the visible full renderer with HTML panels/labels and rejects hidden windows. captureMode=viewport explicitly renders and captures the native WebGL canvas, including when occluded; requires verified frame advancement and a live context. Viewport mode excludes HTML panels and labels and reports rendererHidden/freshFrame provenance.", z.object({ path: z.string().min(1), captureMode: z.enum(["window", "viewport"]).default("window") }), async ({ path, captureMode }) =>
+    await session.get().screenshot(path, captureMode), false, { destructiveHint: false });
   tool("plasticity_save_copy", "Save the current document to a new .plasticity file without overwriting.", z.object({ path: z.string().min(1) }), async ({ path }) =>
     await session.get().saveCopy(path), false, { destructiveHint: false });
   tool("plasticity_save", "Save the open document over its own .plasticity file, exactly like File > Save: Plasticity rotates its backup copies and clears the unsaved-changes flag. expectedPath must be the file the document is open from; a document that has never been saved is refused, use plasticity_save_copy for it.", z.object({ expectedPath: z.string().min(1), revision }).strict(), async ({ expectedPath, revision: current }) =>
     await session.get().saveDocument(expectedPath, current));
-  tool("plasticity_open_document", "Open a .plasticity document after writing the current document to a new backup file.", z.object({ path: z.string().min(1), backupPath: z.string().min(1), intent, revision }), async ({ path, backupPath, intent: purpose, revision: current }) =>
+  tool("plasticity_open_document", "Open a .plasticity document after saving the current scene as a new backup file. If opening fails after the save, the current document remains associated with the backup.", z.object({ path: z.string().min(1), backupPath: z.string().min(1), intent, revision }), async ({ path, backupPath, intent: purpose, revision: current }) =>
     await journaled("open-document", purpose, { path, backupPath }, () => session.get().openDocument(path, backupPath, current)));
   tool("plasticity_export_step", "Export exact B-Rep bodies to a new STEP file without overwriting.", z.object({ ids, path: z.string().min(1), revision }), async ({ ids: bodyIds, path, revision: current }) =>
     await session.get().exportStep(bodyIds, path, current), false, { destructiveHint: false });

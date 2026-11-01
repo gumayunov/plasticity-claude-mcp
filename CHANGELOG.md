@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Merge upstream `0bcbe2a`. Fixes that apply on 26.1: `plasticity_mirror` with `keepOriginal: false`, opening documents with unsaved changes, region patch leaving an interactive move pending, periodic curved faces, shell unjoin and vertex offset, measurement labels, MMB arm thickness (older records stay readable by version), interface failure location labels, ASCII STL with several solids, and a clear launcher error when Plasticity disables the Node inspector fuse.
+- Behaviour changes: a failed `plasticity_open_document` leaves the document under its backup name; helices and printed threads refuse fractional turns before building geometry; bodies report `boundsMethod`; `plasticity_screenshot` adds `captureMode: viewport`; curve imprint adds normal projection.
+- The topology cache format changed, so revisions differ after updating: re-read `plasticity_status`. Older construction history stays readable.
+- The upstream Plasticity 26.2 adapter is included but has not been tested in this fork. The standard 26.2 build disables the Node inspector, so MCP cannot connect to it.
 - Add `plasticity_delete_appearance_materials`: delete unused appearance materials from the document catalog by ID in one native Undo step; assigned materials are refused before any change.
 - Fix clearing an appearance assignment with `materialId: 0` in `plasticity_set_appearance_material`: Plasticity 26.1.3 rejects 0 natively, the assignment is now cleared with `undefined`.
 - Fix `plasticity_set_visibility` and `plasticity_set_locked` leaving the viewport on the previous state: the flags now go through a native database transaction like the outliner's visibility toggle, so hidden bodies disappear, shown ones appear (including bodies hidden since the document was opened, which had no GPU meshes yet), locked ones stop being pickable, and Undo/Redo restore the matching frame (#14).

@@ -11,6 +11,7 @@ Session basics (connect, revisions, catalog) are in `plasticity-modeling`.
 
 - No MCP response contains the open file's path: `documentToken` is an id, and the window title shows at most the file name.
 - Plasticity reopens the last document on start. To work on a known file, open it explicitly: `plasticity_open_document` with `path`, a new `backupPath` in a temporary directory (the current document, unsaved changes included, is written there first), `intent` and `revision`.
+- `plasticity_open_document` first saves the current document under `backupPath`. If the open then fails, the document stays open under that backup name and `plasticity_save` writes there, not to the file you started from: check the path before saving.
 - A large file keeps loading for about a minute after the window looks ready. If the call times out, do not call it again: `plasticity_reconcile`, then check the body count. Retrying opens the file twice.
 
 ## Reading a large document
@@ -24,7 +25,7 @@ Session basics (connect, revisions, catalog) are in `plasticity-modeling`.
 
 - `plasticity_export_stl` / `plasticity_export_step` write all `ids` into one new file and never overwrite. For one file per body, call once per body. Export into a fresh directory and replace the destination once the whole set is checked.
 - Instances are not bodies and are not exported. Export the source bodies and apply `matrixWorldMm` to the mesh yourself; with a negative determinant (a mirror) swap two vertices of every triangle so normals point outward. `plasticity_realize_instances` would turn them into bodies, but it edits the document: only with the user's consent.
-- Check every STL: signed volume > 0 and the mesh inside the body's `boundsMm`, a loose box that is a few millimetres larger on curved bodies.
+- Check every STL: signed volume > 0 and the mesh inside the body's `boundsMm`. On Plasticity 26.1 `boundsMethod` is `native-box`: a loose box that is a few millimetres larger on curved bodies.
 
 ## Errors and the user's work
 
