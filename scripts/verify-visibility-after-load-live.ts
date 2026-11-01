@@ -50,6 +50,7 @@ async function main(): Promise<void> {
     while (state.undoDepth > initial.undoDepth) state = await operations.undo(state.revision);
     requireEmpty(state);
 
+    state = await saveDisposableCheckpoint(operations, runtime, join(output, "empty-before-reopen.plasticity"));
     documentReplaced = true;
     state = await operations.openDocument(fixture, join(output, "before-reopen.plasticity"), state.revision);
     const hiddenBody = bodyNamed(state, "Hidden body fixture");
@@ -58,28 +59,28 @@ async function main(): Promise<void> {
     assert.equal(hiddenGroup.visible, false, "Reopened group is not hidden");
 
     await operations.setView("isometric", true);
-    const hiddenFrame = await viewportFrame(operations, join(output, "hidden-at-load.png"));
+    const hiddenFrame = await viewportFrame(operations, runtime, join(output, "hidden-at-load.png"));
     const priorDepth = state.undoDepth;
     state = await operations.setNodeVisibility([hiddenBody.id], [], [], [hiddenGroup.id], true, state.revision);
     assert.equal(state.undoDepth, priorDepth + 1, "Showing did not add exactly one history step");
     assert.equal(bodyNamed(state, "Hidden body fixture").visible, true, "Body flag remains hidden");
     assert.equal(groupNamed(state, "Hidden group").visible, true, "Group flag remains hidden");
-    const shownFrame = await viewportFrame(operations, join(output, "shown.png"));
+    const shownFrame = await viewportFrame(operations, runtime, join(output, "shown.png"));
     // Two boxes cover several percent of the window; a stale viewport changes only outliner icons.
     const shown = comparePngPixels(hiddenFrame, shownFrame);
     assert.ok(shown.changedPixelRatio >= 0.01, `Viewport does not render the bodies hidden since load (changed ${shown.changedPixelRatio})`);
 
     state = await operations.undo(state.revision);
     assert.equal(bodyNamed(state, "Hidden body fixture").visible, false, "Undo did not hide the body");
-    const undo = comparePngPixels(hiddenFrame, await viewportFrame(operations, join(output, "undo.png")));
+    const undo = comparePngPixels(hiddenFrame, await viewportFrame(operations, runtime, join(output, "undo.png")));
     assert.ok(undo.changedPixelRatio <= 0.0001, `Undo did not restore the hidden viewport (changed ${undo.changedPixelRatio})`);
     state = await operations.redo(state.revision);
     assert.equal(bodyNamed(state, "Hidden body fixture").visible, true, "Redo did not show the body");
-    const redo = comparePngPixels(shownFrame, await viewportFrame(operations, join(output, "redo.png")));
+    const redo = comparePngPixels(shownFrame, await viewportFrame(operations, runtime, join(output, "redo.png")));
     assert.ok(redo.changedPixelRatio <= 0.0001, `Redo did not restore the shown viewport (changed ${redo.changedPixelRatio})`);
     state = await operations.setNodeVisibility([hiddenBody.id], [], [], [hiddenGroup.id], false, state.revision);
     assert.equal(bodyNamed(state, "Hidden body fixture").visible, false, "Body flag remains visible");
-    const hidden = comparePngPixels(hiddenFrame, await viewportFrame(operations, join(output, "hidden-again.png")));
+    const hidden = comparePngPixels(hiddenFrame, await viewportFrame(operations, runtime, join(output, "hidden-again.png")));
     assert.ok(hidden.changedPixelRatio <= 0.0001, `Viewport still renders the hidden bodies (changed ${hidden.changedPixelRatio})`);
 
     state = await operations.setNodeLocked([hiddenBody.id], [], [], [hiddenGroup.id], true, state.revision);
@@ -88,6 +89,7 @@ async function main(): Promise<void> {
     state = await operations.undo(state.revision);
     assert.equal(bodyNamed(state, "Hidden body fixture").locked, false, "Lock Undo did not unlock the body");
 
+    state = await saveDisposableCheckpoint(operations, runtime, join(output, "fixture-before-restore.plasticity"));
     state = await operations.openDocument(emptyCopy, join(output, "before-restore.plasticity"), state.revision);
     requireEmpty(state);
     evidence.frames = { shown, undo, redo, hidden };
@@ -102,6 +104,7 @@ async function main(): Promise<void> {
       if (runtime && operations && initial && !runtime.isUncertain()) {
         let state = await operations.state();
         if (documentReplaced && emptyCopy) {
+          state = await saveDisposableCheckpoint(operations, runtime, join(output, "fixture-before-failure-restore.plasticity"));
           state = await operations.openDocument(emptyCopy, join(output, "failure-backup.plasticity"), state.revision);
         } else if (state.documentToken === initial.documentToken) {
           while (state.undoDepth > initial.undoDepth) state = await operations.undo(state.revision);
@@ -122,7 +125,25 @@ async function main(): Promise<void> {
   }
 }
 
-async function viewportFrame(operations: PlasticityOperations, path: string): Promise<Buffer> {
+async function saveDisposableCheckpoint(operations: PlasticityOperations, runtime: PlasticityRuntime, path: string): Promise<RuntimeState> {
+  // saveCopy preserves the document's dirty flag. Save this disposable scene to
+  // its own new checkpoint before native open, which otherwise asks to discard it.
+  await operations.saveCopy(path);
+  await runtime.mutate(`async function (path) {
+    if (this.executor.isBusy) throw new Error('Plasticity is busy');
+    this.document.filename = path;
+    await this.save();
+  }`, [], [path]);
+  return await operations.state();
+}
+
+async function viewportFrame(operations: PlasticityOperations, runtime: PlasticityRuntime, path: string): Promise<Buffer> {
+  // Hover outlines depend on the pointer position and are cleared by Undo/Redo.
+  // Compare the geometry in the same unhovered state before and after each edit.
+  await runtime.read(`function () {
+    this.selection.hovered.removeAll();
+    for (const viewport of this.viewports) viewport.setNeedsRender();
+  }`);
   // The viewport redraws on the next animation frame after a scene change.
   await new Promise((resolve) => setTimeout(resolve, 500));
   await operations.screenshot(path);

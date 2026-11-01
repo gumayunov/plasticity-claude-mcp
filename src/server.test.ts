@@ -977,6 +977,14 @@ test("MCP initializes, lists tools, and validates tool input", async () => {
     arguments: { targetId: 7, curveIds: [11], direction: [0, 0, 0], revision: "r1" },
   });
   assert.equal(invalidImprint.isError, true);
+  const invalidCaptureMode = await client.callTool({ name: "plasticity_screenshot", arguments: { path: "test.png", captureMode: "unknown" } });
+  assert.equal(invalidCaptureMode.isError, true);
+  assert.match(JSON.stringify(invalidCaptureMode.content), /captureMode/);
+  for (const parameters of [{}, { projectionMethod: "vector" }, { projectionMethod: "normal", direction: [0,0,-1] }, { projectionMethod: "invalid" }]) {
+    const rejected = await client.callTool({ name: "plasticity_imprint_curves_on_body", arguments: { targetId: 7, curveIds: [11], revision: "r1", ...parameters } });
+    assert.equal(rejected.isError, true);
+    assert.match(JSON.stringify(rejected.content), /direction|projectionMethod/);
+  }
   const invalidPatch = await client.callTool({
     name: "plasticity_patch_regions",
     arguments: { regionIds: [], revision: "r1" },
@@ -1301,19 +1309,6 @@ test("Codex tool router catalogs and validates every registered operation", asyn
   } while (true);
   assert.equal(catalogTotal, registered.tools.length - 1);
   assert.equal(catalogNames.size, catalogTotal, "catalog pages must cover every registered operation without duplicates");
-
-  const listing = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "hole", limit: 10 } }));
-  assert.ok(listing.tools.length > 3);
-  for (const item of listing.tools as Array<Record<string, unknown>>) {
-    assert.equal("inputSchema" in item, false, "long catalog pages list summaries, not schemas");
-    assert.equal(typeof item.summary, "string");
-  }
-  const forced = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "hole", limit: 10, schemas: true } }));
-  assert.ok((forced.tools as Array<Record<string, unknown>>).every((item) => typeof item.inputSchema === "object"));
-  const exactName = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "plasticity_create_through_hole" } }));
-  assert.deepEqual((exactName.tools as Array<{ name: string }>).map((item) => item.name), ["plasticity_create_through_hole"],
-    "an exact name selects that operation even when other names contain it");
-  assert.equal(JSON.stringify(exactName).includes("prefixItems"), false, "uniform vectors are exported as fixed-length arrays");
   const catalogEntries = registered.tools
     .filter((tool) => tool.name !== "plasticity_call")
     .map((tool) => ({ name: tool.name, description: tool.description ?? "" }));
@@ -1331,6 +1326,19 @@ test("Codex tool router catalogs and validates every registered operation", asyn
     assert.ok(scores[0]!.score > scores[1]!.score,
       `"${words}" must rank ${expected} first on score, not on name order: ${JSON.stringify(scores.slice(0, 3))}`);
   }
+
+  const listing = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "hole", limit: 10 } }));
+  assert.ok(listing.tools.length > 3);
+  for (const item of listing.tools as Array<Record<string, unknown>>) {
+    assert.equal("inputSchema" in item, false, "long catalog pages list summaries, not schemas");
+    assert.equal(typeof item.summary, "string");
+  }
+  const forced = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "hole", limit: 10, schemas: true } }));
+  assert.ok((forced.tools as Array<Record<string, unknown>>).every((item) => typeof item.inputSchema === "object"));
+  const exactName = parseToolJson(await client.callTool({ name: "plasticity_call", arguments: { toolName: "catalog", query: "plasticity_create_through_hole" } }));
+  assert.deepEqual((exactName.tools as Array<{ name: string }>).map((item) => item.name), ["plasticity_create_through_hole"],
+    "an exact name selects that operation even when other names contain it");
+  assert.equal(JSON.stringify(exactName).includes("prefixItems"), false, "uniform vectors are exported as fixed-length arrays");
 
   const invalid = await client.callTool({ name: "plasticity_call", arguments: {
     toolName: "plasticity_create_box",
@@ -5359,7 +5367,7 @@ test("serializes compact curve inspection and all native rebuild modes", async (
   const controlPoints = [{
     id: 7, versionId: 17, positionSource: "native-control-handle" as const,
     boundaryVertices: [{ reference: { bodyId: 7, kind: "vertex" as const, pointId: 101 }, versionId: "17v101", positionMm: [0, 0, 0] as [number, number, number], slideDirections: { positiveU: [1, 0, 0] as [number, number, number], negativeU: [-1, 0, 0] as [number, number, number] } }],
-    interiorControlPoints: [{ reference: { bodyId: 7, kind: "control-point" as const, pointId: 2 }, versionId: "17c2", positionMm: [10, 20, 0] as [number, number, number], slideDirections: { positiveU: [0, 1, 0] as [number, number, number], negativeU: [0, -1, 0] as [number, number, number] } }],
+    interiorControlPoints: [{ reference: { bodyId: 7, kind: "control-point" as const, pointId: 0 }, versionId: "17c0", positionMm: [10, 20, 0] as [number, number, number], slideDirections: { positiveU: [0, 1, 0] as [number, number, number], negativeU: [0, -1, 0] as [number, number, number] } }],
   }];
   const evaluatedSamples = [{
     reference: { bodyId: 7, segmentEntityId: 99, normalizedParameter: 0.5 }, bodyVersionId: 17,
@@ -5423,35 +5431,41 @@ test("serializes compact curve inspection and all native rebuild modes", async (
   const duplicateRegions = await client.callTool({ name: "plasticity_create_curves_from_regions", arguments: { regionIds: ["20r1", "20r1"], revision: state.revision } });
   assert.equal(duplicateRegions.isError, true);
   const movedControlPoint = await client.callTool({ name: "plasticity_move_curve_control_points", arguments: {
-    points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], deltaMm: [0, 10, 5], revision: state.revision,
+    points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], deltaMm: [0, 10, 5], revision: state.revision,
   } });
   assert.equal(movedControlPoint.isError, undefined);
   assert.deepEqual(nativeCalls.at(-1)?.bindings, ["MultiMoveControlPointFactory", "MoveControlPointCommand"]);
-  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], delta: [0, 0.01, 0.005] }]);
+  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], delta: [0, 0.01, 0.005] }]);
   const slidControlPoint = await client.callTool({ name: "plasticity_slide_curve_control_points", arguments: {
-    points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], direction: "positive-u", distanceMm: 5, revision: state.revision,
+    points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], direction: "positive-u", distanceMm: 5, revision: state.revision,
   } });
   assert.equal(slidControlPoint.isError, undefined);
   assert.deepEqual(nativeCalls.at(-1)?.bindings, ["MultiSlideControlPointFactory", "MoveControlPointCommand"]);
-  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], direction: "posU", distance: 0.005 }]);
+  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], direction: "posU", distance: 0.005 }]);
   const rotatedControlPoint = await client.callTool({ name: "plasticity_rotate_curve_control_points", arguments: {
-    points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], pivotMm: [10, 20, 0], axis: [0, 0, 2], degrees: 90, revision: state.revision,
+    points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], pivotMm: [10, 20, 0], axis: [0, 0, 2], degrees: 90, revision: state.revision,
   } });
   assert.equal(rotatedControlPoint.isError, undefined);
   assert.deepEqual(nativeCalls.at(-1)?.bindings, ["MultiRotateControlPointFactory", "RotateControlPointCommand", "Vector3", "Quaternion"]);
-  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], pivot: [0.01, 0.02, 0], axis: [0, 0, 1], radians: Math.PI / 2 }]);
+  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], pivot: [0.01, 0.02, 0], axis: [0, 0, 1], radians: Math.PI / 2 }]);
   const scaledControlPoint = await client.callTool({ name: "plasticity_scale_curve_control_points", arguments: {
-    points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], pivotMm: [10, 20, 0], factors: [2, 0.5, 1], revision: state.revision,
+    points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], pivotMm: [10, 20, 0], factors: [2, 0.5, 1], revision: state.revision,
   } });
   assert.equal(scaledControlPoint.isError, undefined);
   assert.deepEqual(nativeCalls.at(-1)?.bindings, ["MultiScaleControlPointFactory", "ScaleControlPointCommand"]);
-  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], pivot: [0.01, 0.02, 0], factors: [2, 0.5, 1] }]);
+  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], pivot: [0.01, 0.02, 0], factors: [2, 0.5, 1] }]);
+  const beforeInvalidPoint = nativeCalls.length;
+  const invalidPoint = await client.callTool({ name: "plasticity_move_curve_control_points", arguments: {
+    points: [{ bodyId: 7, kind: "control-point", pointId: -1 }], deltaMm: [0, 1, 0], revision: state.revision,
+  } });
+  assert.equal(invalidPoint.isError, true);
+  assert.equal(nativeCalls.length, beforeInvalidPoint);
   const deletedControlPoint = await client.callTool({ name: "plasticity_delete_curve_control_points", arguments: {
-    points: [{ bodyId: 7, kind: "control-point", pointId: 2 }], revision: state.revision,
+    points: [{ bodyId: 7, kind: "control-point", pointId: 0 }], revision: state.revision,
   } });
   assert.equal(deletedControlPoint.isError, undefined);
   assert.deepEqual(nativeCalls.at(-1)?.bindings, ["DeleteControlPointFactory", "DeleteControlPointCommand"]);
-  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 2 }] }]);
+  assert.deepEqual(nativeCalls.at(-1)?.values, [{ points: [{ bodyId: 7, kind: "control-point", pointId: 0 }] }]);
 
   for (const arguments_ of [
     { ids: [7], method: "tolerance", toleranceMm: 0.1, revision: state.revision },
